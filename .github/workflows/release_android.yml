@@ -24,6 +24,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check Space
+        run: |
+          df -h
+
       - name: Build
         run: |
           bash build.sh release android
