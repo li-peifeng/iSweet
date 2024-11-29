@@ -41,7 +41,7 @@ func Login(c *gin.Context) {
 func LoginHash(c *gin.Context) {
 	var req LoginReq
 	if err := c.ShouldBind(&req); err != nil {
-		common.ErrorStrResp(c, "密码错误", 400)
+		common.ErrorStrResp(c, "用户名或密码错误", 400)
 		return
 	}
 	loginHash(c, &req)
@@ -162,7 +162,7 @@ type Verify2FAReq struct {
 func Verify2FA(c *gin.Context) {
 	var req Verify2FAReq
 	if err := c.ShouldBind(&req); err != nil {
-		common.ErrorResp(c, err, 400)
+		common.ErrorStrResp(c, "2FA 验证失败", 400)
 		return
 	}
 	user := c.MustGet("user").(*model.User)
@@ -176,7 +176,7 @@ func Verify2FA(c *gin.Context) {
 	}
 	user.OtpSecret = req.Secret
 	if err := op.UpdateUser(user); err != nil {
-		common.ErrorResp(c, err, 500)
+		common.ErrorStrResp(c, "无效的 OTP 代码", 500)
 	} else {
 		common.SuccessResp(c)
 	}

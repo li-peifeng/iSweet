@@ -26,7 +26,7 @@ func BeginAuthnLogin(c *gin.Context) {
 	}
 	authnInstance, err := authn.NewAuthnInstance(c.Request)
 	if err != nil {
-		common.ErrorResp(c, err, 400)
+		common.ErrorStrResp(c, "WebAuthn 验证失败", 400)
 		return
 	}
 
@@ -44,13 +44,13 @@ func BeginAuthnLogin(c *gin.Context) {
 		options, sessionData, err = authnInstance.BeginDiscoverableLogin()
 	}
 	if err != nil {
-		common.ErrorResp(c, err, 400)
+		common.ErrorStrResp(c, "WebAuthn 验证失败", 400)
 		return
 	}
 
 	val, err := json.Marshal(sessionData)
 	if err != nil {
-		common.ErrorResp(c, err, 400)
+		common.ErrorStrResp(c, "WebAuthn 验证失败", 400)
 		return
 	}
 	common.SuccessResp(c, gin.H{
@@ -67,20 +67,20 @@ func FinishAuthnLogin(c *gin.Context) {
 	}
 	authnInstance, err := authn.NewAuthnInstance(c.Request)
 	if err != nil {
-		common.ErrorResp(c, err, 400)
+		common.ErrorStrResp(c, "WebAuthn 验证失败", 400)
 		return
 	}
 
 	sessionDataString := c.GetHeader("session")
 	sessionDataBytes, err := base64.StdEncoding.DecodeString(sessionDataString)
 	if err != nil {
-		common.ErrorResp(c, err, 400)
+		common.ErrorStrResp(c, "WebAuthn 验证失败", 400)
 		return
 	}
 
 	var sessionData webauthn.SessionData
 	if err := json.Unmarshal(sessionDataBytes, &sessionData); err != nil {
-		common.ErrorResp(c, err, 400)
+		common.ErrorStrResp(c, "WebAuthn 验证失败", 400)
 		return
 	}
 
@@ -88,7 +88,7 @@ func FinishAuthnLogin(c *gin.Context) {
 	if username := c.Query("username"); username != "" {
 		user, err = db.GetUserByName(username)
 		if err != nil {
-			common.ErrorResp(c, err, 400)
+			common.ErrorStrResp(c, "WebAuthn 验证失败", 400)
 			return
 		}
 		_, err = authnInstance.FinishLogin(user, sessionData, c.Request)
@@ -107,13 +107,13 @@ func FinishAuthnLogin(c *gin.Context) {
 		}, sessionData, c.Request)
 	}
 	if err != nil {
-		common.ErrorResp(c, err, 400)
+		common.ErrorStrResp(c, "WebAuthn 验证失败", 400)
 		return
 	}
 
 	token, err := common.GenerateToken(user)
 	if err != nil {
-		common.ErrorResp(c, err, 400, true)
+		common.ErrorStrResp(c, "WebAuthn 验证失败", 400, true)
 		return
 	}
 	common.SuccessResp(c, gin.H{"token": token})
