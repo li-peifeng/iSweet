@@ -21,7 +21,7 @@ import (
 func BeginAuthnLogin(c *gin.Context) {
 	enabled := setting.GetBool(conf.WebauthnLoginEnabled)
 	if !enabled {
-		common.ErrorStrResp(c, "WebAuthn is not enabled", 403)
+		common.ErrorStrResp(c, "WebAuthn 未启用", 403)
 		return
 	}
 	authnInstance, err := authn.NewAuthnInstance(c.Request)
@@ -62,7 +62,7 @@ func BeginAuthnLogin(c *gin.Context) {
 func FinishAuthnLogin(c *gin.Context) {
 	enabled := setting.GetBool(conf.WebauthnLoginEnabled)
 	if !enabled {
-		common.ErrorStrResp(c, "WebAuthn is not enabled", 403)
+		common.ErrorStrResp(c, "WebAuthn 未启用", 403)
 		return
 	}
 	authnInstance, err := authn.NewAuthnInstance(c.Request)
@@ -122,7 +122,7 @@ func FinishAuthnLogin(c *gin.Context) {
 func BeginAuthnRegistration(c *gin.Context) {
 	enabled := setting.GetBool(conf.WebauthnLoginEnabled)
 	if !enabled {
-		common.ErrorStrResp(c, "WebAuthn is not enabled", 403)
+		common.ErrorStrResp(c, "WebAuthn 未启用", 403)
 		return
 	}
 	user := c.MustGet("user").(*model.User)
@@ -152,7 +152,7 @@ func BeginAuthnRegistration(c *gin.Context) {
 func FinishAuthnRegistration(c *gin.Context) {
 	enabled := setting.GetBool(conf.WebauthnLoginEnabled)
 	if !enabled {
-		common.ErrorStrResp(c, "WebAuthn is not enabled", 403)
+		common.ErrorStrResp(c, "WebAuthn 未启用", 403)
 		return
 	}
 	user := c.MustGet("user").(*model.User)
@@ -192,7 +192,7 @@ func FinishAuthnRegistration(c *gin.Context) {
 		common.ErrorResp(c, err, 400)
 		return
 	}
-	common.SuccessResp(c, "Registered Successfully")
+	common.SuccessResp(c, "注册成功")
 }
 
 func DeleteAuthnLogin(c *gin.Context) {
@@ -212,7 +212,7 @@ func DeleteAuthnLogin(c *gin.Context) {
 		common.ErrorResp(c, err, 400)
 		return
 	}
-	common.SuccessResp(c, "Deleted Successfully")
+	common.SuccessResp(c, "删除成功")
 }
 
 func GetAuthnCredentials(c *gin.Context) {
