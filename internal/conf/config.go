@@ -110,6 +110,7 @@ type Config struct {
 	S3                    S3          `json:"s3" envPrefix:"S3_"`
 	FTP                   FTP         `json:"ftp" envPrefix:"FTP_"`
 	SFTP                  SFTP        `json:"sftp" envPrefix:"SFTP_"`
+	LastLaunchedVersion   string      `json:"last_launched_version"`
 }
 
 func DefaultConfig() *Config {
@@ -195,5 +196,6 @@ func DefaultConfig() *Config {
 			Enable: false,
 			Listen: ":5222",
 		},
+		LastLaunchedVersion: "",
 	}
 }

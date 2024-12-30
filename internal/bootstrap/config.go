@@ -34,6 +34,8 @@ func InitConfig() {
 			log.Fatalf("failed to create config file: %+v", err)
 		}
 		conf.Conf = conf.DefaultConfig()
+		LastLaunchedVersion = conf.Version
+		conf.Conf.LastLaunchedVersion = conf.Version
 		if !utils.WriteJsonToFile(configPath, conf.Conf) {
 			log.Fatalf("failed to create default config file")
 		}
@@ -46,6 +48,10 @@ func InitConfig() {
 		err = utils.Json.Unmarshal(configBytes, conf.Conf)
 		if err != nil {
 			log.Fatalf("load config error: %+v", err)
+		}
+		LastLaunchedVersion = conf.Conf.LastLaunchedVersion
+		if conf.Version != "dev" || LastLaunchedVersion == "" {
+			conf.Conf.LastLaunchedVersion = conf.Version
 		}
 		// update config.json struct
 		confBody, err := utils.Json.MarshalIndent(conf.Conf, "", "  ")

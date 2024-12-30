@@ -1,17 +1,21 @@
 package task
 
 import (
+	"context"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/xhofe/tache"
+	"sync"
 	"time"
 )
 
 type TaskExtension struct {
 	tache.Base
-	Creator    *model.User
-	startTime  *time.Time
-	endTime    *time.Time
-	totalBytes int64
+	ctx          context.Context
+	ctxInitMutex sync.Mutex
+	Creator      *model.User
+	startTime    *time.Time
+	endTime      *time.Time
+	totalBytes   int64
 }
 
 func (t *TaskExtension) SetCreator(creator *model.User) {
@@ -49,6 +53,17 @@ func (t *TaskExtension) SetTotalBytes(totalBytes int64) {
 
 func (t *TaskExtension) GetTotalBytes() int64 {
 	return t.totalBytes
+}
+
+func (t *TaskExtension) Ctx() context.Context {
+	if t.ctx == nil {
+		t.ctxInitMutex.Lock()
+		if t.ctx == nil {
+			t.ctx = context.WithValue(t.Base.Ctx(), "user", t.Creator)
+		}
+		t.ctxInitMutex.Unlock()
+	}
+	return t.ctx
 }
 
 type TaskExtensionInfo interface {

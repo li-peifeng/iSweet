@@ -252,7 +252,7 @@ func (d *Yun139) familyGetFiles(catalogID string) ([]model.Obj, error) {
 			}
 			files = append(files, &f)
 		}
-		if 100*pageNum > resp.Data.TotalCount {
+		if resp.Data.TotalCount == 0 {
 			break
 		}
 		pageNum++

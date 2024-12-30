@@ -9,6 +9,7 @@ import (
 	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/alist-org/alist/v3/server/ftp"
+	"github.com/alist-org/alist/v3/server/sftp"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 	"net/http"
@@ -21,6 +22,7 @@ type SftpDriver struct {
 }
 
 func NewSftpDriver() (*SftpDriver, error) {
+	sftp.InitHostKey()
 	header := &http.Header{}
 	header.Add("User-Agent", setting.GetStr(conf.FTPProxyUserAgent))
 	return &SftpDriver{
@@ -40,7 +42,7 @@ func (d *SftpDriver) GetConfig() *sftpd.Config {
 		AuthLogCallback:      d.AuthLogCallback,
 		BannerCallback:       d.GetBanner,
 	}
-	for _, k := range conf.SSHSigners {
+	for _, k := range sftp.SSHSigners {
 		serverConfig.AddHostKey(k)
 	}
 	d.config = &sftpd.Config{
@@ -62,7 +64,7 @@ func (d *SftpDriver) GetFileSystem(sc *ssh.ServerConn) (sftpd.FileSystem, error)
 	ctx = context.WithValue(ctx, "meta_pass", "")
 	ctx = context.WithValue(ctx, "client_ip", sc.RemoteAddr().String())
 	ctx = context.WithValue(ctx, "proxy_header", d.proxyHeader)
-	return &ftp.SftpDriverAdapter{FtpDriver: ftp.NewAferoAdapter(ctx)}, nil
+	return &sftp.DriverAdapter{FtpDriver: ftp.NewAferoAdapter(ctx)}, nil
 }
 
 func (d *SftpDriver) Close() {

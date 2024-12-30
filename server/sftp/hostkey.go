@@ -1,4 +1,4 @@
-package bootstrap
+package sftp
 
 import (
 	"crypto/rand"
@@ -7,14 +7,18 @@ import (
 	"encoding/pem"
 	"fmt"
 	"github.com/alist-org/alist/v3/cmd/flags"
-	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"golang.org/x/crypto/ssh"
 	"os"
 	"path/filepath"
 )
 
+var SSHSigners []ssh.Signer
+
 func InitHostKey() {
+	if SSHSigners != nil {
+		return
+	}
 	sshPath := filepath.Join(flags.DataDir, "ssh")
 	if !utils.Exists(sshPath) {
 		err := utils.CreateNestedDirectory(sshPath)
@@ -23,9 +27,9 @@ func InitHostKey() {
 			return
 		}
 	}
-	conf.SSHSigners = make([]ssh.Signer, 0, 4)
+	SSHSigners = make([]ssh.Signer, 0, 4)
 	if rsaKey, ok := LoadOrGenerateRSAHostKey(sshPath); ok {
-		conf.SSHSigners = append(conf.SSHSigners, rsaKey)
+		SSHSigners = append(SSHSigners, rsaKey)
 	}
 	// TODO Add keys for other encryption algorithms
 }
