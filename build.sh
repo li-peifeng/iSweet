@@ -27,7 +27,7 @@ ldflags="\
 "
 
 FetchWebDev() {
-  curl -L https://codeload.github.com/li-peifeng/Sweet-Cloud-Dist/tar.gz/refs/heads/dev -o web-dist-dev.tar.gz
+  curl -L https://codeload.github.com/li-peifeng/iSweet-Dist/tar.gz/refs/heads/dev -o web-dist-dev.tar.gz
   tar -zxvf web-dist-dev.tar.gz
   rm -rf public/dist
   mv -f web-dist-dev/dist public
@@ -35,7 +35,7 @@ FetchWebDev() {
 }
 
 FetchWebRelease() {
-  curl -L https://github.com/li-peifeng/Sweet-Cloud-Web/releases/latest/download/dist.tar.gz -o dist.tar.gz
+  curl -L https://github.com/li-peifeng/iSweet-Web/releases/latest/download/dist.tar.gz -o dist.tar.gz
   tar -zxvf dist.tar.gz
   rm -rf public/dist
   mv -f dist public
