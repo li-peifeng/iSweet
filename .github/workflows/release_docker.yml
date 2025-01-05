@@ -13,10 +13,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         
-      - name: Check Space
-        run: |
-          df -h
-
       - uses: actions/setup-go@v5
         with:
           go-version: "stable"

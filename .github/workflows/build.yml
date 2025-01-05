@@ -26,11 +26,7 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Check Space
-        run: |
-          df -h
-          
+  
       - uses: benjlevesque/short-sha@v3.0
         id: short-sha
 

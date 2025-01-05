@@ -47,15 +47,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 释放磁盘空间
-        uses: jlumbroso/free-disk-space@main
-        with:
-          swap-storage: true
-
-      - name: Check Space
-        run: |
-          df -h
-
       - name: Install dependencies
         run: |
           sudo snap install zig --classic --beta
