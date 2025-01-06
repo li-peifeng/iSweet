@@ -1,13 +1,14 @@
-## iSweet 基于 alist 修改定制版
+# iSweet 基于 alist 修改定制版
 
 功能详情请看更新日志。
 
-## Docker
+# Docker
+## docker pull leolitaly/isweet:latest
 
-docker pull leolitaly/isweet:latest
+# Docker Hub 访问有问题的可以用 ghcr.io 源拉取镜像
+## docker pull ghcr.io/li-peifeng/isweet:latest
 
 预览图
-
 ### light
 ![IMG_0116](https://github.com/user-attachments/assets/6e248f9e-1f0f-4280-b209-2a137252f69b)
 ![IMG_0119](https://github.com/user-attachments/assets/caa65fd7-9c7f-43c5-b312-cc6ec5fa45fc)
