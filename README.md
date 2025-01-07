@@ -8,6 +8,12 @@
 # Docker Hub 访问有问题的可以用 ghcr.io 源拉取镜像
 ## docker pull ghcr.io/li-peifeng/isweet:latest
 
+# 阿里云 Docker
+### Docker Hub 和 ghcr.io 访问有问题的国内用户可以用此源拉取镜像
+## docker pull crpi-lzr94m9idb4j2kpi.cn-shanghai.personal.cr.aliyuncs.com/isweet/isweet:latest
+
+
+
 预览图
 ### light
 ![IMG_0116](https://github.com/user-attachments/assets/6e248f9e-1f0f-4280-b209-2a137252f69b)
