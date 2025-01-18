@@ -4,7 +4,7 @@ go 1.22.4
 
 require (
 	github.com/KirCute/ftpserverlib-pasvportmap v1.25.0
-	github.com/KirCute/sftpd-alist v0.0.11
+	github.com/KirCute/sftpd-alist v0.0.12
 	github.com/SheltonZhu/115driver v1.0.32
 	github.com/Xhofe/go-cache v0.0.0-20240804043513-b1a71927bc21
 	github.com/Xhofe/rateg v0.0.0-20230728072201-251a4e1adad4
@@ -62,7 +62,7 @@ require (
 	github.com/xhofe/tache v0.1.3
 	github.com/xhofe/wopan-sdk-go v0.1.3
 	github.com/zzzhr1990/go-common-entity v0.0.0-20221216044934-fd1c571e3a22
-	golang.org/x/crypto v0.30.0
+	golang.org/x/crypto v0.31.0
 	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e
 	golang.org/x/image v0.19.0
 	golang.org/x/net v0.28.0

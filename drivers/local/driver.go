@@ -79,6 +79,28 @@ func (d *Local) Init(ctx context.Context) error {
 	} else {
 		d.thumbTokenBucket = NewStaticTokenBucketWithMigration(d.thumbTokenBucket, d.thumbConcurrency)
 	}
+	// Check the VideoThumbPos value
+	if d.VideoThumbPos == "" {
+		d.VideoThumbPos = "20%"
+	}
+	if strings.HasSuffix(d.VideoThumbPos, "%") {
+		percentage := strings.TrimSuffix(d.VideoThumbPos, "%")
+		val, err := strconv.ParseFloat(percentage, 64)
+		if err != nil {
+			return fmt.Errorf("invalid video_thumb_pos value: %s, err: %s", d.VideoThumbPos, err)
+		}
+		if val < 0 || val > 100 {
+			return fmt.Errorf("invalid video_thumb_pos value: %s, the precentage must be a number between 0 and 100", d.VideoThumbPos)
+		}
+	} else {
+		val, err := strconv.ParseFloat(d.VideoThumbPos, 64)
+		if err != nil {
+			return fmt.Errorf("invalid video_thumb_pos value: %s, err: %s", d.VideoThumbPos, err)
+		}
+		if val < 0 {
+			return fmt.Errorf("invalid video_thumb_pos value: %s, the time must be a positive number", d.VideoThumbPos)
+		}
+	}
 	return nil
 }
 

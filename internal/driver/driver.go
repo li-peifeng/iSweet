@@ -80,6 +80,13 @@ type Put interface {
 	Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up UpdateProgress) error
 }
 
+type PutURL interface {
+	// PutURL directly put a URL into the storage
+	// Applicable to index-based drivers like URL-Tree or drivers that support uploading files as URLs
+	// Called when using SimpleHttp for offline downloading, skipping creating a download task
+	PutURL(ctx context.Context, dstDir model.Obj, name, url string) error
+}
+
 //type WriteResult interface {
 //	MkdirResult
 //	MoveResult
@@ -107,6 +114,13 @@ type CopyResult interface {
 
 type PutResult interface {
 	Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up UpdateProgress) (model.Obj, error)
+}
+
+type PutURLResult interface {
+	// PutURL directly put a URL into the storage
+	// Applicable to index-based drivers like URL-Tree or drivers that support uploading files as URLs
+	// Called when using SimpleHttp for offline downloading, skipping creating a download task
+	PutURL(ctx context.Context, dstDir model.Obj, name, url string) (model.Obj, error)
 }
 
 type UpdateProgress func(percentage float64)

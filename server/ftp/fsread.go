@@ -8,6 +8,7 @@ import (
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/internal/stream"
+	"github.com/alist-org/alist/v3/pkg/http_range"
 	"github.com/alist-org/alist/v3/server/common"
 	"github.com/pkg/errors"
 	"io"
@@ -19,10 +20,12 @@ import (
 
 type FileDownloadProxy struct {
 	ftpserver.FileTransfer
-	reader io.ReadCloser
+	ss     *stream.SeekableStream
+	reader io.Reader
+	cur    int64
 }
 
-func OpenDownload(ctx context.Context, reqPath string) (*FileDownloadProxy, error) {
+func OpenDownload(ctx context.Context, reqPath string, offset int64) (*FileDownloadProxy, error) {
 	user := ctx.Value("user").(*model.User)
 	meta, err := op.GetNearestMeta(reqPath)
 	if err != nil {
@@ -52,11 +55,22 @@ func OpenDownload(ctx context.Context, reqPath string) (*FileDownloadProxy, erro
 	if err != nil {
 		return nil, err
 	}
-	return &FileDownloadProxy{reader: ss}, nil
+	var reader io.Reader
+	if offset != 0 {
+		reader, err = ss.RangeRead(http_range.Range{Start: offset, Length: -1})
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		reader = ss
+	}
+	return &FileDownloadProxy{ss: ss, reader: reader}, nil
 }
 
 func (f *FileDownloadProxy) Read(p []byte) (n int, err error) {
-	return f.reader.Read(p)
+	n, err = f.reader.Read(p)
+	f.cur += int64(n)
+	return n, err
 }
 
 func (f *FileDownloadProxy) Write(p []byte) (n int, err error) {
@@ -64,11 +78,32 @@ func (f *FileDownloadProxy) Write(p []byte) (n int, err error) {
 }
 
 func (f *FileDownloadProxy) Seek(offset int64, whence int) (int64, error) {
-	return 0, errs.NotSupport
+	switch whence {
+	case io.SeekStart:
+		break
+	case io.SeekCurrent:
+		offset += f.cur
+		break
+	case io.SeekEnd:
+		offset += f.ss.GetSize()
+		break
+	default:
+		return 0, errs.NotSupport
+	}
+	if offset < 0 {
+		return 0, errors.New("Seek: negative position")
+	}
+	reader, err := f.ss.RangeRead(http_range.Range{Start: offset, Length: -1})
+	if err != nil {
+		return f.cur, err
+	}
+	f.cur = offset
+	f.reader = reader
+	return offset, nil
 }
 
 func (f *FileDownloadProxy) Close() error {
-	return f.reader.Close()
+	return f.ss.Close()
 }
 
 type OsFileInfoAdapter struct {

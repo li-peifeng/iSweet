@@ -63,7 +63,7 @@ func (f *FileUploadProxy) Write(p []byte) (n int, err error) {
 }
 
 func (f *FileUploadProxy) Seek(offset int64, whence int) (int64, error) {
-	return 0, errs.NotSupport
+	return f.buffer.Seek(offset, whence)
 }
 
 func (f *FileUploadProxy) Close() error {

@@ -6,8 +6,8 @@ github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/KirCute/ftpserverlib-pasvportmap v1.25.0 h1:ikwCzeqoqN6wvBHOB9OI6dde/jbV7EoTMpUcxtYl5Po=
 github.com/KirCute/ftpserverlib-pasvportmap v1.25.0/go.mod h1:v0NgMtKDDi/6CM6r4P+daCljCW3eO9yS+Z+pZDTKo1E=
-github.com/KirCute/sftpd-alist v0.0.11 h1:BGInXmmLBI+v6S9WZCwvY0DRK1vDprGNcTv/57p2GSo=
-github.com/KirCute/sftpd-alist v0.0.11/go.mod h1:pPFzr6GrKqXvFXLr46ZpoqmtSpwH8DKTYloSp/ybzKQ=
+github.com/KirCute/sftpd-alist v0.0.12 h1:GNVM5QLbQLAfXP4wGUlXFA2IO6fVek0n0IsGnOuISdg=
+github.com/KirCute/sftpd-alist v0.0.12/go.mod h1:2wNK7yyW2XfjyJq10OY6xB4COLac64hOwfV6clDJn6s=
 github.com/Max-Sum/base32768 v0.0.0-20230304063302-18e6ce5945fd h1:nzE1YQBdx1bq9IlZinHa+HVffy+NmVRoKr+wHN8fpLE=
 github.com/Max-Sum/base32768 v0.0.0-20230304063302-18e6ce5945fd/go.mod h1:C8yoIfvESpM3GD07OCHU7fqI7lhwyZ2Td1rbNbTAhnc=
 github.com/RoaringBitmap/roaring v1.9.3 h1:t4EbC5qQwnisr5PrP9nt0IRhRTb9gMUgQF4t4S2OByM=
@@ -574,8 +574,8 @@ golang.org/x/crypto v0.13.0/go.mod h1:y6Z2r+Rw4iayiXXAIxJIDAJ1zMW4yaTpebo8fPOliY
 golang.org/x/crypto v0.19.0/go.mod h1:Iy9bg/ha4yyC70EfRS8jz+B6ybOBKMaSxLj6P6oBDfU=
 golang.org/x/crypto v0.23.0/go.mod h1:CKFgDieR+mRhux2Lsu27y0fO304Db0wZe70UKqHu0v8=
 golang.org/x/crypto v0.25.0/go.mod h1:T+wALwcMOSE0kXgUAnPAHqTLW+XHgcELELW8VaDgm/M=
-golang.org/x/crypto v0.30.0 h1:RwoQn3GkWiMkzlX562cLB7OxWvjH1L8xutO2WoJcRoY=
-golang.org/x/crypto v0.30.0/go.mod h1:kDsLvtWBEx7MV9tJOj9bnXsPbxwJQ6csT/x4KIN4Ssk=
+golang.org/x/crypto v0.31.0 h1:ihbySMvVjLAeSH1IbfcRTkD/iNscyz8rGzjF/E5hV6U=
+golang.org/x/crypto v0.31.0/go.mod h1:kDsLvtWBEx7MV9tJOj9bnXsPbxwJQ6csT/x4KIN4Ssk=
 golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e h1:I88y4caeGeuDQxgdoFPUq097j7kNfw6uvuiNxUBfcBk=
 golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e/go.mod h1:akd2r19cwCdwSwWeIdzYQGa/EZZyqcOdwWiwj5L5eKQ=
 golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8/go.mod h1:FeLwcggjj3mMvU+oOTbSwawSJRM1uh48EjtB4UJZlP0=
