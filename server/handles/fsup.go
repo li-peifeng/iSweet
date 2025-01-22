@@ -34,11 +34,19 @@ func FsStream(c *gin.Context) {
 		return
 	}
 	asTask := c.GetHeader("As-Task") == "true"
+	overwrite := c.GetHeader("Overwrite") != "false"
 	user := c.MustGet("user").(*model.User)
 	path, err = user.JoinPath(path)
 	if err != nil {
 		common.ErrorResp(c, err, 403)
 		return
+	}
+	if !overwrite {
+		if res, _ := fs.Get(c, path, &fs.GetArgs{NoLog: true}); res != nil {
+			_, _ = io.Copy(io.Discard, c.Request.Body)
+			common.ErrorStrResp(c, "file exists", 403)
+			return
+		}
 	}
 	dir, name := stdpath.Split(path)
 	sizeStr := c.GetHeader("Content-Length")
@@ -85,11 +93,19 @@ func FsForm(c *gin.Context) {
 		return
 	}
 	asTask := c.GetHeader("As-Task") == "true"
+	overwrite := c.GetHeader("Overwrite") != "false"
 	user := c.MustGet("user").(*model.User)
 	path, err = user.JoinPath(path)
 	if err != nil {
 		common.ErrorResp(c, err, 403)
 		return
+	}
+	if !overwrite {
+		if res, _ := fs.Get(c, path, &fs.GetArgs{NoLog: true}); res != nil {
+			_, _ = io.Copy(io.Discard, c.Request.Body)
+			common.ErrorStrResp(c, "file exists", 403)
+			return
+		}
 	}
 	storage, err := fs.GetStorage(path, &fs.GetStoragesArgs{})
 	if err != nil {

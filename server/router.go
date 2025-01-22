@@ -42,6 +42,12 @@ func Init(e *gin.Engine) {
 	g.GET("/p/*path", middlewares.Down, handles.Proxy)
 	g.HEAD("/d/*path", middlewares.Down, handles.Down)
 	g.HEAD("/p/*path", middlewares.Down, handles.Proxy)
+	g.GET("/ad/*path", middlewares.Down, handles.ArchiveDown)
+	g.GET("/ap/*path", middlewares.Down, handles.ArchiveProxy)
+	g.GET("/ae/*path", middlewares.Down, handles.ArchiveInternalExtract)
+	g.HEAD("/ad/*path", middlewares.Down, handles.ArchiveDown)
+	g.HEAD("/ap/*path", middlewares.Down, handles.ArchiveProxy)
+	g.HEAD("/ae/*path", middlewares.Down, handles.ArchiveInternalExtract)
 
 	api := g.Group("/api")
 	auth := api.Group("", middlewares.Auth)
@@ -77,6 +83,7 @@ func Init(e *gin.Engine) {
 	public := api.Group("/public")
 	public.Any("/settings", handles.PublicSettings)
 	public.Any("/offline_download_tools", handles.OfflineDownloadTools)
+	public.Any("/archive_extensions", handles.ArchiveExtensions)
 
 	_fs(auth.Group("/fs"))
 	_task(auth.Group("/task", middlewares.AuthNotGuest))
@@ -173,6 +180,10 @@ func _fs(g *gin.RouterGroup) {
 	// g.POST("/add_qbit", handles.AddQbittorrent)
 	// g.POST("/add_transmission", handles.SetTransmission)
 	g.POST("/add_offline_download", handles.AddOfflineDownload)
+	a := g.Group("/archive")
+	a.Any("/meta", handles.FsArchiveMeta)
+	a.Any("/list", handles.FsArchiveList)
+	a.POST("/decompress", handles.FsArchiveDecompress)
 }
 
 func _task(g *gin.RouterGroup) {

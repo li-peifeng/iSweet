@@ -76,7 +76,7 @@ func getUserInfo(c *gin.Context) (bool, uint, bool) {
 	}
 }
 
-func getTargetedHandler[T task.TaskExtensionInfo](manager *tache.Manager[T], callback func(c *gin.Context, task T)) gin.HandlerFunc {
+func getTargetedHandler[T task.TaskExtensionInfo](manager task.Manager[T], callback func(c *gin.Context, task T)) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		isAdmin, uid, ok := getUserInfo(c)
 		if !ok {
@@ -98,7 +98,7 @@ func getTargetedHandler[T task.TaskExtensionInfo](manager *tache.Manager[T], cal
 	}
 }
 
-func getBatchHandler[T task.TaskExtensionInfo](manager *tache.Manager[T], callback func(task T)) gin.HandlerFunc {
+func getBatchHandler[T task.TaskExtensionInfo](manager task.Manager[T], callback func(task T)) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		isAdmin, uid, ok := getUserInfo(c)
 		if !ok {
@@ -123,7 +123,7 @@ func getBatchHandler[T task.TaskExtensionInfo](manager *tache.Manager[T], callba
 	}
 }
 
-func taskRoute[T task.TaskExtensionInfo](g *gin.RouterGroup, manager *tache.Manager[T]) {
+func taskRoute[T task.TaskExtensionInfo](g *gin.RouterGroup, manager task.Manager[T]) {
 	g.GET("/undone", func(c *gin.Context) {
 		isAdmin, uid, ok := getUserInfo(c)
 		if !ok {
@@ -221,4 +221,6 @@ func SetupTaskRoute(g *gin.RouterGroup) {
 	taskRoute(g.Group("/copy"), fs.CopyTaskManager)
 	taskRoute(g.Group("/offline_download"), tool.DownloadTaskManager)
 	taskRoute(g.Group("/offline_download_transfer"), tool.TransferTaskManager)
+	taskRoute(g.Group("/decompress"), fs.ArchiveDownloadTaskManager)
+	taskRoute(g.Group("/decompress_upload"), fs.ArchiveContentUploadTaskManager)
 }

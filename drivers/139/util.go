@@ -54,6 +54,9 @@ func getTime(t string) time.Time {
 }
 
 func (d *Yun139) refreshToken() error {
+	if d.ref == nil {
+		return d.ref.refreshToken()
+	}
 	url := "https://aas.caiyun.feixin.10086.cn:443/tellin/authTokenRefresh.do"
 	var resp RefreshTokenResp
 	decode, err := base64.StdEncoding.DecodeString(d.Authorization)
@@ -99,7 +102,7 @@ func (d *Yun139) request(pathname string, method string, callback base.ReqCallba
 	req.SetHeaders(map[string]string{
 		"Accept":         "application/json, text/plain, */*",
 		"CMS-DEVICE":     "default",
-		"Authorization":  "Basic " + d.Authorization,
+		"Authorization":  "Basic " + d.getAuthorization(),
 		"mcloud-channel": "1000101",
 		"mcloud-client":  "10701",
 		//"mcloud-route": "001",
@@ -151,7 +154,7 @@ func (d *Yun139) getFiles(catalogID string) ([]model.Obj, error) {
 			"catalogSortType": 0,
 			"contentSortType": 0,
 			"commonAccountInfo": base.Json{
-				"account":     d.Account,
+				"account":     d.getAccount(),
 				"accountType": 1,
 			},
 		}
@@ -199,7 +202,7 @@ func (d *Yun139) newJson(data map[string]interface{}) base.Json {
 		"cloudID":     d.CloudID,
 		"cloudType":   1,
 		"commonAccountInfo": base.Json{
-			"account":     d.Account,
+			"account":     d.getAccount(),
 			"accountType": 1,
 		},
 	}
@@ -320,7 +323,7 @@ func (d *Yun139) getLink(contentId string) (string, error) {
 		"appName":   "",
 		"contentID": contentId,
 		"commonAccountInfo": base.Json{
-			"account":     d.Account,
+			"account":     d.getAccount(),
 			"accountType": 1,
 		},
 	}
@@ -383,7 +386,7 @@ func (d *Yun139) personalRequest(pathname string, method string, callback base.R
 	}
 	req.SetHeaders(map[string]string{
 		"Accept":               "application/json, text/plain, */*",
-		"Authorization":        "Basic " + d.Authorization,
+		"Authorization":        "Basic " + d.getAuthorization(),
 		"Caller":               "web",
 		"Cms-Device":           "default",
 		"Mcloud-Channel":       "1000101",
@@ -513,4 +516,17 @@ func (d *Yun139) personalGetLink(fileId string) (string, error) {
 	} else {
 		return jsoniter.Get(res, "data", "url").ToString(), nil
 	}
+}
+
+func (d *Yun139) getAuthorization() string {
+	if d.ref != nil {
+		return d.ref.getAuthorization()
+	}
+	return d.Authorization
+}
+func (d *Yun139) getAccount() string {
+	if d.ref != nil {
+		return d.ref.getAccount()
+	}
+	return d.Account
 }

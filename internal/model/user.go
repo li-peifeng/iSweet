@@ -44,6 +44,8 @@ type User struct {
 	//   9:  webdav write
 	//   10: ftp/sftp login and read
 	//   11: ftp/sftp write
+	//   12: can read archives
+	//   13: can decompress archives
 	Permission int32  `json:"permission"`
 	OtpSecret  string `json:"-"`
 	SsoID      string `json:"sso_id"` // unique by sso platform
@@ -125,6 +127,14 @@ func (u *User) CanFTPAccess() bool {
 
 func (u *User) CanFTPManage() bool {
 	return (u.Permission>>11)&1 == 1
+}
+
+func (u *User) CanReadArchives() bool {
+	return (u.Permission>>12)&1 == 1
+}
+
+func (u *User) CanDecompress() bool {
+	return (u.Permission>>13)&1 == 1
 }
 
 func (u *User) JoinPath(reqPath string) (string, error) {

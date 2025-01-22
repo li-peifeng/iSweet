@@ -3,6 +3,7 @@ package fs
 import (
 	"context"
 	"fmt"
+	"github.com/alist-org/alist/v3/internal/errs"
 	"net/http"
 	stdpath "path"
 	"time"
@@ -69,7 +70,10 @@ func _copy(ctx context.Context, srcObjPath, dstDirPath string, lazyCache ...bool
 	}
 	// copy if in the same storage, just call driver.Copy
 	if srcStorage.GetStorage() == dstStorage.GetStorage() {
-		return nil, op.Copy(ctx, srcStorage, srcObjActualPath, dstDirActualPath, lazyCache...)
+		err = op.Copy(ctx, srcStorage, srcObjActualPath, dstDirActualPath, lazyCache...)
+		if !errors.Is(err, errs.NotImplement) && !errors.Is(err, errs.NotSupport) {
+			return nil, err
+		}
 	}
 	if ctx.Value(conf.NoTaskKey) != nil {
 		srcObj, err := op.Get(ctx, srcStorage, srcObjActualPath)
