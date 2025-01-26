@@ -113,7 +113,7 @@ func FsForm(c *gin.Context) {
 		return
 	}
 	if storage.Config().NoUpload {
-		common.ErrorStrResp(c, "当前存储不支持上传", 405)
+		common.ErrorStrResp(c, "当前存储不支持上传" + "Current storage doesn't support upload", 405)
 		return
 	}
 	file, err := c.FormFile("file")

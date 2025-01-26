@@ -17,7 +17,7 @@ func list(ctx context.Context, path string, args *ListArgs) ([]model.Obj, error)
 	virtualFiles := op.GetStorageVirtualFilesByPath(path)
 	storage, actualPath, err := op.GetStorageAndActualPath(path)
 	if err != nil && len(virtualFiles) == 0 {
-		return nil, errors.WithMessage(err, "存储获取失败")
+		return nil, errors.WithMessage(err, "存储获取失败" + "Failed get storage")
 	}
 
 	var _objs []model.Obj
@@ -31,7 +31,7 @@ func list(ctx context.Context, path string, args *ListArgs) ([]model.Obj, error)
 				log.Errorf("fs/list: %+v", err)
 			}
 			if len(virtualFiles) == 0 {
-				return nil, errors.WithMessage(err, "对象获取失败")
+				return nil, errors.WithMessage(err, "对象获取失败" + "Failed get objs")
 			}
 		}
 	}

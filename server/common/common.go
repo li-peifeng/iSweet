@@ -71,14 +71,14 @@ func SuccessResp(c *gin.Context, data ...interface{}) {
 	if len(data) == 0 {
 		c.JSON(200, Resp[interface{}]{
 			Code:    200,
-			Message: "完成",
+			Message: "完成" + "Success",
 			Data:    nil,
 		})
 		return
 	}
 	c.JSON(200, Resp[interface{}]{
 		Code:    200,
-		Message: "完成",
+		Message: "完成" + "Success",
 		Data:    data[0],
 	})
 }

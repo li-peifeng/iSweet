@@ -69,7 +69,7 @@ func FsMove(c *gin.Context) {
 		return
 	}
 	if len(req.Names) == 0 {
-		common.ErrorStrResp(c, "空文件名", 400)
+		common.ErrorStrResp(c, "空文件名" + "Empty file names", 400)
 		return
 	}
 	user := c.MustGet("user").(*model.User)
@@ -112,7 +112,7 @@ func FsCopy(c *gin.Context) {
 		return
 	}
 	if len(req.Names) == 0 {
-		common.ErrorStrResp(c, "空文件名", 400)
+		common.ErrorStrResp(c, "空文件名" + "Empty file names", 400)
 		return
 	}
 	user := c.MustGet("user").(*model.User)
@@ -204,7 +204,7 @@ func FsRemove(c *gin.Context) {
 		return
 	}
 	if len(req.Names) == 0 {
-		common.ErrorStrResp(c, "空文件名", 400)
+		common.ErrorStrResp(c, "空文件名" + "Empty file names", 400)
 		return
 	}
 	user := c.MustGet("user").(*model.User)

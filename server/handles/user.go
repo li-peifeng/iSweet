@@ -36,7 +36,7 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 	if req.IsAdmin() || req.IsGuest() {
-		common.ErrorStrResp(c, "无法创建 admin 或 guest 用户", 400, true)
+		common.ErrorStrResp(c, "无法创建 admin 或 guest 用户" + "Admin or guest user can not be created", 400, true)
 		return
 	}
 	req.SetPassword(req.Password)
@@ -61,7 +61,7 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 	if user.Role != req.Role {
-		common.ErrorStrResp(c, "角色无法改变", 400)
+		common.ErrorStrResp(c, "角色无法改变" + "Role can not be changed", 400)
 		return
 	}
 	if req.Password == "" {
@@ -75,7 +75,7 @@ func UpdateUser(c *gin.Context) {
 		req.OtpSecret = user.OtpSecret
 	}
 	if req.Disabled && req.IsAdmin() {
-		common.ErrorStrResp(c, "无法禁用管理员用户", 400)
+		common.ErrorStrResp(c, "无法禁用管理员用户" + "Admin user can not be disabled", 400)
 		return
 	}
 	if err := op.UpdateUser(&req); err != nil {
