@@ -7,9 +7,6 @@ gitCommit=$(git log --pretty=format:"%h" -1)
 if [ "$1" = "dev" ]; then
   version="dev"
   webVersion="dev"
-elif [ "$1" = "beta" ]; then
-  version="beta"
-  webVersion="dev"
 else
   git tag -d beta
   version=$(git describe --abbrev=0 --tags)
@@ -304,12 +301,8 @@ if [ "$1" = "dev" ]; then
   else
     BuildDev
   fi
-elif [ "$1" = "release" -o "$1" = "beta" ]; then
-  if [ "$1" = "beta" ]; then
-    FetchWebDev
-  else
+elif [ "$1" = "release" ]; then
     FetchWebRelease
-  fi
   if [ "$2" = "docker" ]; then
     BuildDocker
   elif [ "$2" = "docker-multiplatform" ]; then
