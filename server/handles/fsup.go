@@ -2,6 +2,7 @@ package handles
 
 import (
 	"github.com/alist-org/alist/v3/internal/task"
+	"github.com/alist-org/alist/v3/pkg/utils"
 	"io"
 	"net/url"
 	stdpath "path"
@@ -55,11 +56,22 @@ func FsStream(c *gin.Context) {
 		common.ErrorResp(c, err, 400)
 		return
 	}
+	h := make(map[*utils.HashType]string)
+	if md5 := c.GetHeader("X-File-Md5"); md5 != "" {
+		h[utils.MD5] = md5
+	}
+	if sha1 := c.GetHeader("X-File-Sha1"); sha1 != "" {
+		h[utils.SHA1] = sha1
+	}
+	if sha256 := c.GetHeader("X-File-Sha256"); sha256 != "" {
+		h[utils.SHA256] = sha256
+	}
 	s := &stream.FileStream{
 		Obj: &model.Object{
 			Name:     name,
 			Size:     size,
 			Modified: getLastModified(c),
+			HashInfo: utils.NewHashInfoByMap(h),
 		},
 		Reader:       c.Request.Body,
 		Mimetype:     c.GetHeader("Content-Type"),
@@ -128,11 +140,22 @@ func FsForm(c *gin.Context) {
 	}
 	defer f.Close()
 	dir, name := stdpath.Split(path)
+	h := make(map[*utils.HashType]string)
+	if md5 := c.GetHeader("X-File-Md5"); md5 != "" {
+		h[utils.MD5] = md5
+	}
+	if sha1 := c.GetHeader("X-File-Sha1"); sha1 != "" {
+		h[utils.SHA1] = sha1
+	}
+	if sha256 := c.GetHeader("X-File-Sha256"); sha256 != "" {
+		h[utils.SHA256] = sha256
+	}
 	s := stream.FileStream{
 		Obj: &model.Object{
 			Name:     name,
 			Size:     file.Size,
 			Modified: getLastModified(c),
+			HashInfo: utils.NewHashInfoByMap(h),
 		},
 		Reader:       f,
 		Mimetype:     file.Header.Get("Content-Type"),

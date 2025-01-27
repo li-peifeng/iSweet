@@ -32,6 +32,7 @@ type TransferTask struct {
 }
 
 func (t *TransferTask) Run() error {
+	t.ReinitCtx()
 	t.ClearEndTime()
 	t.SetStartTime(time.Now())
 	defer func() { t.SetEndTime(time.Now()) }()

@@ -39,6 +39,7 @@ func (t *CopyTask) GetStatus() string {
 }
 
 func (t *CopyTask) Run() error {
+	t.ReinitCtx()
 	t.ClearEndTime()
 	t.SetStartTime(time.Now())
 	defer func() { t.SetEndTime(time.Now()) }()

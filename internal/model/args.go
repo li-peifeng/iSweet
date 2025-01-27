@@ -17,10 +17,11 @@ type ListArgs struct {
 }
 
 type LinkArgs struct {
-	IP      string
-	Header  http.Header
-	Type    string
-	HttpReq *http.Request
+	IP       string
+	Header   http.Header
+	Type     string
+	HttpReq  *http.Request
+	Redirect bool
 }
 
 type Link struct {
@@ -87,7 +88,7 @@ type RangeReadCloser struct {
 	utils.Closers
 }
 
-func (r RangeReadCloser) RangeRead(ctx context.Context, httpRange http_range.Range) (io.ReadCloser, error) {
+func (r *RangeReadCloser) RangeRead(ctx context.Context, httpRange http_range.Range) (io.ReadCloser, error) {
 	rc, err := r.RangeReader(ctx, httpRange)
 	r.Closers.Add(rc)
 	return rc, err

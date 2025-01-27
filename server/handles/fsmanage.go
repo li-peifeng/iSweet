@@ -90,7 +90,7 @@ func FsMove(c *gin.Context) {
 	if !req.Overwrite {
 		for _, name := range req.Names {
 			if res, _ := fs.Get(c, stdpath.Join(dstDir, name), &fs.GetArgs{NoLog: true}); res != nil {
-				common.ErrorStrResp(c, "文件已存在", 403)
+				common.ErrorStrResp(c, fmt.Sprintf("文件 [%s] 已存在", name), 403)
 				return
 			}
 		}
@@ -133,7 +133,7 @@ func FsCopy(c *gin.Context) {
 	if !req.Overwrite {
 		for _, name := range req.Names {
 			if res, _ := fs.Get(c, stdpath.Join(dstDir, name), &fs.GetArgs{NoLog: true}); res != nil {
-				common.ErrorStrResp(c, "文件已存在", 403)
+				common.ErrorStrResp(c, fmt.Sprintf("文件 [%s] 已存在", name), 403)
 				return
 			}
 		}
@@ -180,7 +180,7 @@ func FsRename(c *gin.Context) {
 		dstPath := stdpath.Join(stdpath.Dir(reqPath), req.Name)
 		if dstPath != reqPath {
 			if res, _ := fs.Get(c, dstPath, &fs.GetArgs{NoLog: true}); res != nil {
-				common.ErrorStrResp(c, "文件已存在", 403)
+				common.ErrorStrResp(c, fmt.Sprintf("文件 [%s] 已存在", req.Name), 403)
 				return
 			}
 		}

@@ -3,12 +3,13 @@ package op
 import (
 	"context"
 	stderrors "errors"
-	"github.com/alist-org/alist/v3/internal/archive/tool"
-	"github.com/alist-org/alist/v3/internal/stream"
 	"io"
 	stdpath "path"
 	"strings"
 	"time"
+
+	"github.com/alist-org/alist/v3/internal/archive/tool"
+	"github.com/alist-org/alist/v3/internal/stream"
 
 	"github.com/Xhofe/go-cache"
 	"github.com/alist-org/alist/v3/internal/driver"
@@ -40,8 +41,8 @@ func GetArchiveMeta(ctx context.Context, storage driver.Driver, path string, arg
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get %s archive met: %+v", path, err)
 		}
-		if !storage.Config().NoCache {
-			archiveMetaCache.Set(key, m, cache.WithEx[*model.ArchiveMetaProvider](time.Minute*time.Duration(storage.GetStorage().CacheExpiration)))
+		if m.Expiration != nil {
+			archiveMetaCache.Set(key, m, cache.WithEx[*model.ArchiveMetaProvider](*m.Expiration))
 		}
 		return m, nil
 	}
@@ -82,7 +83,15 @@ func getArchiveMeta(ctx context.Context, storage driver.Driver, path string, arg
 		}
 		meta, err := storageAr.GetArchiveMeta(ctx, obj, args.ArchiveArgs)
 		if !errors.Is(err, errs.NotImplement) {
-			return obj, &model.ArchiveMetaProvider{ArchiveMeta: meta, DriverProviding: true}, err
+			archiveMetaProvider := &model.ArchiveMetaProvider{ArchiveMeta: meta, DriverProviding: true}
+			if meta.GetTree() != nil {
+				archiveMetaProvider.Sort = &storage.GetStorage().Sort
+			}
+			if !storage.Config().NoCache {
+				Expiration := time.Minute * time.Duration(storage.GetStorage().CacheExpiration)
+				archiveMetaProvider.Expiration = &Expiration
+			}
+			return obj, archiveMetaProvider, err
 		}
 	}
 	obj, t, ss, err := getArchiveToolAndStream(ctx, storage, path, args.LinkArgs)
@@ -95,7 +104,21 @@ func getArchiveMeta(ctx context.Context, storage driver.Driver, path string, arg
 		}
 	}()
 	meta, err := t.GetMeta(ss, args.ArchiveArgs)
-	return obj, &model.ArchiveMetaProvider{ArchiveMeta: meta, DriverProviding: false}, err
+	if err != nil {
+		return nil, nil, err
+	}
+	archiveMetaProvider := &model.ArchiveMetaProvider{ArchiveMeta: meta, DriverProviding: false}
+	if meta.GetTree() != nil {
+		archiveMetaProvider.Sort = &storage.GetStorage().Sort
+	}
+	if !storage.Config().NoCache {
+		Expiration := time.Minute * time.Duration(storage.GetStorage().CacheExpiration)
+		archiveMetaProvider.Expiration = &Expiration
+	} else if ss.Link.MFile == nil {
+		// alias、crypt 驱动
+		archiveMetaProvider.Expiration = ss.Link.Expiration
+	}
+	return obj, archiveMetaProvider, err
 }
 
 var archiveListCache = cache.NewMemCache(cache.WithShards[[]model.Obj](64))
@@ -113,10 +136,10 @@ func ListArchive(ctx context.Context, storage driver.Driver, path string, args m
 			log.Debugf("use cache when list archive [%s]%s", path, args.InnerPath)
 			return files, nil
 		}
-		if meta, ok := archiveMetaCache.Get(metaKey); ok {
-			log.Debugf("use meta cache when list archive [%s]%s", path, args.InnerPath)
-			return getChildrenFromArchiveMeta(meta, args.InnerPath)
-		}
+		// if meta, ok := archiveMetaCache.Get(metaKey); ok {
+		// 	log.Debugf("use meta cache when list archive [%s]%s", path, args.InnerPath)
+		// 	return getChildrenFromArchiveMeta(meta, args.InnerPath)
+		// }
 	}
 	objs, err, _ := archiveListG.Do(key, func() ([]model.Obj, error) {
 		obj, files, err := listArchive(ctx, storage, path, args)

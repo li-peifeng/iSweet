@@ -28,6 +28,7 @@ type DownloadTask struct {
 }
 
 func (t *DownloadTask) Run() error {
+	t.ReinitCtx()
 	t.ClearEndTime()
 	t.SetStartTime(time.Now())
 	defer func() { t.SetEndTime(time.Now()) }()

@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/xhofe/tache"
 	"sync"
@@ -64,6 +65,20 @@ func (t *TaskExtension) Ctx() context.Context {
 		t.ctxInitMutex.Unlock()
 	}
 	return t.ctx
+}
+
+func (t *TaskExtension) ReinitCtx() {
+	if !conf.Conf.Tasks.AllowRetryCanceled {
+		return
+	}
+	select {
+	case <-t.Base.Ctx().Done():
+		ctx, cancel := context.WithCancel(context.Background())
+		t.SetCtx(ctx)
+		t.SetCancelFunc(cancel)
+		t.ctx = nil
+	default:
+	}
 }
 
 type TaskExtensionInfo interface {

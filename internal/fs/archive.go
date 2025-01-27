@@ -50,6 +50,7 @@ func (t *ArchiveDownloadTask) GetStatus() string {
 }
 
 func (t *ArchiveDownloadTask) Run() error {
+	t.ReinitCtx()
 	t.ClearEndTime()
 	t.SetStartTime(time.Now())
 	defer func() { t.SetEndTime(time.Now()) }()
@@ -144,6 +145,7 @@ func (t *ArchiveContentUploadTask) GetStatus() string {
 }
 
 func (t *ArchiveContentUploadTask) Run() error {
+	t.ReinitCtx()
 	t.ClearEndTime()
 	t.SetStartTime(time.Now())
 	defer func() { t.SetEndTime(time.Now()) }()
@@ -235,7 +237,9 @@ func (t *ArchiveContentUploadTask) RunWithNextTaskCallback(f func(nextTsk *Archi
 
 func (t *ArchiveContentUploadTask) Cancel() {
 	t.TaskExtension.Cancel()
-	t.deleteSrcFile()
+	if !conf.Conf.Tasks.AllowRetryCanceled {
+		t.deleteSrcFile()
+	}
 }
 
 func (t *ArchiveContentUploadTask) deleteSrcFile() {

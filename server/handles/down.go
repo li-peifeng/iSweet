@@ -31,10 +31,11 @@ func Down(c *gin.Context) {
 		return
 	} else {
 		link, _, err := fs.Link(c, rawPath, model.LinkArgs{
-			IP:      c.ClientIP(),
-			Header:  c.Request.Header,
-			Type:    c.Query("type"),
-			HttpReq: c.Request,
+			IP:       c.ClientIP(),
+			Header:   c.Request.Header,
+			Type:     c.Query("type"),
+			HttpReq:  c.Request,
+			Redirect: true,
 		})
 		if err != nil {
 			common.ErrorResp(c, err, 500)

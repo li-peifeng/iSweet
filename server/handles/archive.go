@@ -2,6 +2,10 @@ package handles
 
 import (
 	"fmt"
+	"net/url"
+	stdpath "path"
+	"strings"
+
 	"github.com/alist-org/alist/v3/internal/archive/tool"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/errs"
@@ -15,9 +19,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"mime"
-	stdpath "path"
-	"strings"
 )
 
 type ArchiveMetaReq struct {
@@ -31,6 +32,7 @@ type ArchiveMetaResp struct {
 	Comment     string               `json:"comment"`
 	IsEncrypted bool                 `json:"encrypted"`
 	Content     []ArchiveContentResp `json:"content"`
+	Sort        *model.Sort          `json:"sort,omitempty"`
 	RawURL      string               `json:"raw_url"`
 	Sign        string               `json:"sign"`
 }
@@ -128,6 +130,7 @@ func FsArchiveMeta(c *gin.Context) {
 		Comment:     ret.GetComment(),
 		IsEncrypted: ret.IsEncrypted(),
 		Content:     toContentResp(ret.GetTree()),
+		Sort:        ret.Sort,
 		RawURL:      fmt.Sprintf("%s%s%s", common.GetApiUrl(c.Request), api, utils.EncodePath(reqPath, true)),
 		Sign:        s,
 	})
@@ -281,10 +284,11 @@ func ArchiveDown(c *gin.Context) {
 		link, _, err := fs.ArchiveDriverExtract(c, archiveRawPath, model.ArchiveInnerArgs{
 			ArchiveArgs: model.ArchiveArgs{
 				LinkArgs: model.LinkArgs{
-					IP:      c.ClientIP(),
-					Header:  c.Request.Header,
-					Type:    c.Query("type"),
-					HttpReq: c.Request,
+					IP:       c.ClientIP(),
+					Header:   c.Request.Header,
+					Type:     c.Query("type"),
+					HttpReq:  c.Request,
+					Redirect: true,
 				},
 				Password: password,
 			},
@@ -360,14 +364,11 @@ func ArchiveInternalExtract(c *gin.Context) {
 		"Referrer-Policy": "no-referrer",
 		"Cache-Control":   "max-age=0, no-cache, no-store, must-revalidate",
 	}
-	if c.Query("attachment") == "true" {
-		filename := stdpath.Base(innerPath)
-		headers["Content-Disposition"] = fmt.Sprintf("attachment; filename=\"%s\"", filename)
-	}
+	filename := stdpath.Base(innerPath)
+	headers["Content-Disposition"] = fmt.Sprintf(`attachment; filename="%s"; filename*=UTF-8''%s`, filename, url.PathEscape(filename))
 	contentType := c.Request.Header.Get("Content-Type")
 	if contentType == "" {
-		fileExt := stdpath.Ext(innerPath)
-		contentType = mime.TypeByExtension(fileExt)
+		contentType = utils.GetMimeType(filename)
 	}
 	c.DataFromReader(200, size, contentType, rc, headers)
 }

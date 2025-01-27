@@ -18,7 +18,7 @@ type Addition struct {
 
 var config = driver.Config{
 	Name:        "115 Share",
-	DefaultRoot: "",
+	DefaultRoot: "0",
 	// OnlyProxy:   true,
 	// OnlyLocal:         true,
 	CheckStatus:       false,

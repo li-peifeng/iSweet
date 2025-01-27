@@ -1,25 +1,26 @@
 package zip
 
 import (
+	"io"
+	"os"
+	stdpath "path"
+	"strings"
+
 	"github.com/alist-org/alist/v3/internal/archive/tool"
 	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/stream"
 	"github.com/yeka/zip"
-	"io"
-	"os"
-	stdpath "path"
-	"strings"
 )
 
 type Zip struct {
 }
 
-func (_ *Zip) AcceptedExtensions() []string {
+func (*Zip) AcceptedExtensions() []string {
 	return []string{".zip"}
 }
 
-func (_ *Zip) GetMeta(ss *stream.SeekableStream, args model.ArchiveArgs) (model.ArchiveMeta, error) {
+func (*Zip) GetMeta(ss *stream.SeekableStream, args model.ArchiveArgs) (model.ArchiveMeta, error) {
 	reader, err := stream.NewReadAtSeeker(ss, 0)
 	if err != nil {
 		return nil, err
@@ -29,19 +30,81 @@ func (_ *Zip) GetMeta(ss *stream.SeekableStream, args model.ArchiveArgs) (model.
 		return nil, err
 	}
 	encrypted := false
+	dirMap := make(map[string]*model.ObjectTree)
+	dirMap["."] = &model.ObjectTree{}
 	for _, file := range zipReader.File {
 		if file.IsEncrypted() {
 			encrypted = true
 			break
 		}
+
+		name := strings.TrimPrefix(decodeName(file.Name), "/")
+		var dir string
+		var dirObj *model.ObjectTree
+		isNewFolder := false
+		if !file.FileInfo().IsDir() {
+			// 先将 文件 添加到 所在的文件夹
+			dir = stdpath.Dir(name)
+			dirObj = dirMap[dir]
+			if dirObj == nil {
+				isNewFolder = true
+				dirObj = &model.ObjectTree{}
+				dirObj.IsFolder = true
+				dirObj.Name = stdpath.Base(dir)
+				dirObj.Modified = file.ModTime()
+				dirMap[dir] = dirObj
+			}
+			dirObj.Children = append(
+				dirObj.Children, &model.ObjectTree{
+					Object: *toModelObj(file.FileInfo()),
+				},
+			)
+		} else {
+			dir = strings.TrimSuffix(name, "/")
+			dirObj = dirMap[dir]
+			if dirObj == nil {
+				isNewFolder = true
+				dirObj = &model.ObjectTree{}
+				dirMap[dir] = dirObj
+			}
+			dirObj.IsFolder = true
+			dirObj.Name = stdpath.Base(dir)
+			dirObj.Modified = file.ModTime()
+		}
+		if isNewFolder {
+			// 将 文件夹 添加到 父文件夹
+			dir = stdpath.Dir(dir)
+			pDirObj := dirMap[dir]
+			if pDirObj != nil {
+				pDirObj.Children = append(pDirObj.Children, dirObj)
+				continue
+			}
+
+			for {
+				//	考虑压缩包仅记录文件的路径，不记录文件夹
+				pDirObj = &model.ObjectTree{}
+				pDirObj.IsFolder = true
+				pDirObj.Name = stdpath.Base(dir)
+				pDirObj.Modified = file.ModTime()
+				dirMap[dir] = pDirObj
+				pDirObj.Children = append(pDirObj.Children, dirObj)
+				dir = stdpath.Dir(dir)
+				if dirMap[dir] != nil {
+					break
+				}
+				dirObj = pDirObj
+			}
+		}
 	}
+
 	return &model.ArchiveMetaInfo{
 		Comment:   zipReader.Comment,
 		Encrypted: encrypted,
+		Tree:      dirMap["."].GetChildren(),
 	}, nil
 }
 
-func (_ *Zip) List(ss *stream.SeekableStream, args model.ArchiveInnerArgs) ([]model.Obj, error) {
+func (*Zip) List(ss *stream.SeekableStream, args model.ArchiveInnerArgs) ([]model.Obj, error) {
 	reader, err := stream.NewReadAtSeeker(ss, 0)
 	if err != nil {
 		return nil, err
@@ -53,6 +116,7 @@ func (_ *Zip) List(ss *stream.SeekableStream, args model.ArchiveInnerArgs) ([]mo
 	if args.InnerPath == "/" {
 		ret := make([]model.Obj, 0)
 		passVerified := false
+		var dir *model.Object
 		for _, file := range zipReader.File {
 			if !passVerified && file.IsEncrypted() {
 				file.SetPassword(args.Password)
@@ -63,11 +127,23 @@ func (_ *Zip) List(ss *stream.SeekableStream, args model.ArchiveInnerArgs) ([]mo
 				_ = rc.Close()
 				passVerified = true
 			}
-			name := decodeName(file.Name)
-			if strings.Contains(strings.TrimSuffix(name, "/"), "/") {
+			name := strings.TrimSuffix(decodeName(file.Name), "/")
+			if strings.Contains(name, "/") {
+				// 有些压缩包不压缩第一个文件夹
+				strs := strings.Split(name, "/")
+				if dir == nil && len(strs) == 2 {
+					dir = &model.Object{
+						Name:     strs[0],
+						Modified: ss.ModTime(),
+						IsFolder: true,
+					}
+				}
 				continue
 			}
 			ret = append(ret, toModelObj(file.FileInfo()))
+		}
+		if len(ret) == 0 && dir != nil {
+			ret = append(ret, dir)
 		}
 		return ret, nil
 	} else {
@@ -76,13 +152,11 @@ func (_ *Zip) List(ss *stream.SeekableStream, args model.ArchiveInnerArgs) ([]mo
 		exist := false
 		for _, file := range zipReader.File {
 			name := decodeName(file.Name)
-			if name == innerPath {
-				exist = true
-			}
 			dir := stdpath.Dir(strings.TrimSuffix(name, "/")) + "/"
 			if dir != innerPath {
 				continue
 			}
+			exist = true
 			ret = append(ret, toModelObj(file.FileInfo()))
 		}
 		if !exist {
@@ -92,7 +166,7 @@ func (_ *Zip) List(ss *stream.SeekableStream, args model.ArchiveInnerArgs) ([]mo
 	}
 }
 
-func (_ *Zip) Extract(ss *stream.SeekableStream, args model.ArchiveInnerArgs) (io.ReadCloser, int64, error) {
+func (*Zip) Extract(ss *stream.SeekableStream, args model.ArchiveInnerArgs) (io.ReadCloser, int64, error) {
 	reader, err := stream.NewReadAtSeeker(ss, 0)
 	if err != nil {
 		return nil, 0, err
@@ -117,7 +191,7 @@ func (_ *Zip) Extract(ss *stream.SeekableStream, args model.ArchiveInnerArgs) (i
 	return nil, 0, errs.ObjectNotFound
 }
 
-func (_ *Zip) Decompress(ss *stream.SeekableStream, outputPath string, args model.ArchiveInnerArgs, up model.UpdateProgress) error {
+func (*Zip) Decompress(ss *stream.SeekableStream, outputPath string, args model.ArchiveInnerArgs, up model.UpdateProgress) error {
 	reader, err := stream.NewReadAtSeeker(ss, 0)
 	if err != nil {
 		return err

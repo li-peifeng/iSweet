@@ -1,21 +1,25 @@
 package archives
 
 import (
-	"github.com/alist-org/alist/v3/internal/errs"
-	"github.com/alist-org/alist/v3/internal/model"
-	"github.com/alist-org/alist/v3/internal/stream"
-	"github.com/mholt/archives"
 	"io"
 	fs2 "io/fs"
 	"os"
 	stdpath "path"
 	"strings"
+
+	"github.com/alist-org/alist/v3/internal/errs"
+	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/stream"
+	"github.com/mholt/archives"
 )
 
 func getFs(ss *stream.SeekableStream, args model.ArchiveArgs) (*archives.ArchiveFS, error) {
 	reader, err := stream.NewReadAtSeeker(ss, 0)
 	if err != nil {
 		return nil, err
+	}
+	if r, ok := reader.(*stream.RangeReadReadAtSeeker); ok {
+		r.InitHeadCache()
 	}
 	format, _, err := archives.Identify(ss.Ctx, ss.GetName(), reader)
 	if err != nil {

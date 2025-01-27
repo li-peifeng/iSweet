@@ -275,7 +275,6 @@ func (d *Crypt) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (
 			rrc = converted
 		}
 		if rrc != nil {
-			//remoteRangeReader, err :=
 			remoteReader, err := rrc.RangeRead(ctx, http_range.Range{Start: underlyingOffset, Length: length})
 			remoteClosers.AddClosers(rrc.GetClosers())
 			if err != nil {
@@ -288,10 +287,8 @@ func (d *Crypt) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (
 			if err != nil {
 				return nil, err
 			}
-			//remoteClosers.Add(remoteLink.MFile)
-			//keep reuse same MFile and close at last.
-			remoteClosers.Add(remoteLink.MFile)
-			return io.NopCloser(remoteLink.MFile), nil
+			// 可以直接返回，读取完也不会调用Close，直到连接断开Close
+			return remoteLink.MFile, nil
 		}
 
 		return nil, errs.NotSupport

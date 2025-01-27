@@ -115,12 +115,12 @@ func ExtractFolder(objs []Obj, extractFolder string) {
 }
 
 func WrapObjName(objs Obj) Obj {
-	return &ObjWrapName{Obj: objs}
+	return &ObjWrapName{Name: utils.MappingName(objs.GetName()), Obj: objs}
 }
 
 func WrapObjsName(objs []Obj) {
 	for i := 0; i < len(objs); i++ {
-		objs[i] = &ObjWrapName{Obj: objs[i]}
+		objs[i] = &ObjWrapName{Name: utils.MappingName(objs[i].GetName()), Obj: objs[i]}
 	}
 }
 

@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -15,6 +14,7 @@ import (
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/offline_download/tool"
 	"github.com/alist-org/alist/v3/internal/setting"
+	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/hekmon/transmissionrpc/v3"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -92,7 +92,7 @@ func (t *Transmission) AddURL(args *tool.AddUrlArgs) (string, error) {
 		buffer := new(bytes.Buffer)
 		encoder := base64.NewEncoder(base64.StdEncoding, buffer)
 		// Stream file to the encoder
-		if _, err = io.Copy(encoder, resp.Body); err != nil {
+		if _, err = utils.CopyWithBuffer(encoder, resp.Body); err != nil {
 			return "", errors.Wrap(err, "can't copy file content into the base64 encoder")
 		}
 		// Flush last bytes

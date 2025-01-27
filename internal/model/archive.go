@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type ObjTree interface {
 	Obj
 	GetChildren() []ObjTree
@@ -45,5 +47,7 @@ func (m *ArchiveMetaInfo) GetTree() []ObjTree {
 
 type ArchiveMetaProvider struct {
 	ArchiveMeta
+	*Sort
 	DriverProviding bool
+	Expiration      *time.Duration
 }
