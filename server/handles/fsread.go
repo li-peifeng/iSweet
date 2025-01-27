@@ -76,11 +76,11 @@ func FsList(c *gin.Context) {
 	}
 	c.Set("meta", meta)
 	if !common.CanAccess(user, meta, reqPath, req.Password) {
-		common.ErrorStrResp(c, "密码不正确或没有权限" + "Password is incorrect or you have no permission", 403)
+		common.ErrorStrResp(c, "密码不正确或没有权限", 403)
 		return
 	}
 	if !user.CanWrite() && !common.CanWrite(meta, reqPath) && req.Refresh {
-		common.ErrorStrResp(c, "没有权限刷新" + "Refresh without permission", 403)
+		common.ErrorStrResp(c, "没有权限刷新", 403)
 		return
 	}
 	objs, err := fs.List(c, reqPath, &fs.ListArgs{Refresh: req.Refresh})
@@ -114,7 +114,7 @@ func FsDirs(c *gin.Context) {
 	reqPath := req.Path
 	if req.ForceRoot {
 		if !user.IsAdmin() {
-			common.ErrorStrResp(c, "访问被拒绝" + "Permission denied", 403)
+			common.ErrorStrResp(c, "访问被拒绝", 403)
 			return
 		}
 	} else {
@@ -134,7 +134,7 @@ func FsDirs(c *gin.Context) {
 	}
 	c.Set("meta", meta)
 	if !common.CanAccess(user, meta, reqPath, req.Password) {
-		common.ErrorStrResp(c, "密码不正确或没有权限" + "Password is incorrect or you have no permission", 403)
+		common.ErrorStrResp(c, "密码不正确或没有权限", 403)
 		return
 	}
 	objs, err := fs.List(c, reqPath, &fs.ListArgs{})
@@ -260,7 +260,7 @@ func FsGet(c *gin.Context) {
 	}
 	c.Set("meta", meta)
 	if !common.CanAccess(user, meta, reqPath, req.Password) {
-		common.ErrorStrResp(c, "密码不正确或没有权限" + "Password is incorrect or you have no permission", 403)
+		common.ErrorStrResp(c, "密码不正确或没有权限", 403)
 		return
 	}
 	obj, err := fs.Get(c, reqPath, &fs.GetArgs{})
@@ -385,7 +385,7 @@ func FsOther(c *gin.Context) {
 	}
 	c.Set("meta", meta)
 	if !common.CanAccess(user, meta, req.Path, req.Password) {
-		common.ErrorStrResp(c, "密码不正确或没有权限" + "Password is incorrect or you have no permission", 403)
+		common.ErrorStrResp(c, "密码不正确或没有权限", 403)
 		return
 	}
 	res, err := fs.Other(c, req.FsOtherArgs)

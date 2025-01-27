@@ -31,7 +31,7 @@ type CopyTask struct {
 }
 
 func (t *CopyTask) GetName() string {
-	return fmt.Sprintf("[%s](%s) 复制到 (Copy To): [%s](%s)", t.SrcStorageMp, t.SrcObjPath, t.DstStorageMp, t.DstDirPath)
+	return fmt.Sprintf("复制 [%s](%s) 到 [%s](%s)", t.SrcStorageMp, t.SrcObjPath, t.DstStorageMp, t.DstDirPath)
 }
 
 func (t *CopyTask) GetStatus() string {
@@ -50,7 +50,7 @@ func (t *CopyTask) Run() error {
 		t.dstStorage, err = op.GetStorageByMountPath(t.DstStorageMp)
 	}
 	if err != nil {
-		return errors.WithMessage(err, "无法获取存储" + "Failed get storage")
+		return errors.WithMessage(err, "无法获取存储")
 	}
 	return copyBetween2Storages(t, t.srcStorage, t.dstStorage, t.SrcObjPath, t.DstDirPath)
 }
@@ -62,11 +62,11 @@ var CopyTaskManager *tache.Manager[*CopyTask]
 func _copy(ctx context.Context, srcObjPath, dstDirPath string, lazyCache ...bool) (task.TaskExtensionInfo, error) {
 	srcStorage, srcObjActualPath, err := op.GetStorageAndActualPath(srcObjPath)
 	if err != nil {
-		return nil, errors.WithMessage(err, "获取源存储失败" + "Failed get SRC storage")
+		return nil, errors.WithMessage(err, "获取源存储失败")
 	}
 	dstStorage, dstDirActualPath, err := op.GetStorageAndActualPath(dstDirPath)
 	if err != nil {
-		return nil, errors.WithMessage(err, "获取目标存储失败" + "Failed get DST storage")
+		return nil, errors.WithMessage(err, "获取目标存储失败")
 	}
 	// copy if in the same storage, just call driver.Copy
 	if srcStorage.GetStorage() == dstStorage.GetStorage() {
@@ -78,7 +78,7 @@ func _copy(ctx context.Context, srcObjPath, dstDirPath string, lazyCache ...bool
 	if ctx.Value(conf.NoTaskKey) != nil {
 		srcObj, err := op.Get(ctx, srcStorage, srcObjActualPath)
 		if err != nil {
-			return nil, errors.WithMessagef(err, "源文件获取失败: [%s]" + "Failed get SRCfile: [%s]", srcObjPath)
+			return nil, errors.WithMessagef(err, "源文件获取失败: [%s]", srcObjPath)
 		}
 		if !srcObj.IsDir() {
 			// copy file directly
@@ -86,7 +86,7 @@ func _copy(ctx context.Context, srcObjPath, dstDirPath string, lazyCache ...bool
 				Header: http.Header{},
 			})
 			if err != nil {
-				return nil, errors.WithMessagef(err, "链接获取失败: [%s]" + "Failed getlink: [%s]", srcObjPath)
+				return nil, errors.WithMessagef(err, "链接获取失败: [%s]", srcObjPath)
 			}
 			fs := stream.FileStream{
 				Obj: srcObj,
@@ -95,7 +95,7 @@ func _copy(ctx context.Context, srcObjPath, dstDirPath string, lazyCache ...bool
 			// any link provided is seekable
 			ss, err := stream.NewSeekableStream(fs, link)
 			if err != nil {
-				return nil, errors.WithMessagef(err, "流媒体获取失败: [%s]" + "Failed get stream: [%s]", srcObjPath)
+				return nil, errors.WithMessagef(err, "流媒体获取失败: [%s]", srcObjPath)
 			}
 			return nil, op.Put(ctx, dstStorage, dstDirActualPath, ss, nil, false)
 		}
@@ -118,16 +118,16 @@ func _copy(ctx context.Context, srcObjPath, dstDirPath string, lazyCache ...bool
 }
 
 func copyBetween2Storages(t *CopyTask, srcStorage, dstStorage driver.Driver, srcObjPath, dstDirPath string) error {
-	t.Status = "获取源对象" + "Getting SRC object"
+	t.Status = "获取源对象"
 	srcObj, err := op.Get(t.Ctx(), srcStorage, srcObjPath)
 	if err != nil {
-		return errors.WithMessagef(err, "源文件获取失败: [%s]" + "Failed get SRC file: [%s]", srcObjPath)
+		return errors.WithMessagef(err, "源文件获取失败: [%s]", srcObjPath)
 	}
 	if srcObj.IsDir() {
 		t.Status = "src object is dir, listing objs"
 		objs, err := op.List(t.Ctx(), srcStorage, srcObjPath, model.ListArgs{})
 		if err != nil {
-			return errors.WithMessagef(err, "源对象获取失败: [%s]" + "Failed list SRC objs: [%s]", srcObjPath)
+			return errors.WithMessagef(err, "源对象获取失败: [%s]", srcObjPath)
 		}
 		for _, obj := range objs {
 			if utils.IsCanceled(t.Ctx()) {
@@ -147,7 +147,7 @@ func copyBetween2Storages(t *CopyTask, srcStorage, dstStorage driver.Driver, src
 				DstStorageMp: dstStorage.GetStorage().MountPath,
 			})
 		}
-		t.Status = "源对象为文件夹, 已添加了所有对象的复制任务" + "SRC Object is dir, Added all copy tasks of objs"
+		t.Status = "源对象为文件夹, 已添加了所有对象的复制任务"
 		return nil
 	}
 	return copyFileBetween2Storages(t, srcStorage, dstStorage, srcObjPath, dstDirPath)
@@ -156,14 +156,14 @@ func copyBetween2Storages(t *CopyTask, srcStorage, dstStorage driver.Driver, src
 func copyFileBetween2Storages(tsk *CopyTask, srcStorage, dstStorage driver.Driver, srcFilePath, dstDirPath string) error {
 	srcFile, err := op.Get(tsk.Ctx(), srcStorage, srcFilePath)
 	if err != nil {
-		return errors.WithMessagef(err, "源文件获取失败: [%s]" + "Failed get SRCfile: [%s]", srcFilePath)
+		return errors.WithMessagef(err, "源文件获取失败: [%s]", srcFilePath)
 	}
 	tsk.SetTotalBytes(srcFile.GetSize())
 	link, _, err := op.Link(tsk.Ctx(), srcStorage, srcFilePath, model.LinkArgs{
 		Header: http.Header{},
 	})
 	if err != nil {
-		return errors.WithMessagef(err, "链接获取失败: [%s]" + "Failed get link: [%s]", srcFilePath)
+		return errors.WithMessagef(err, "链接获取失败: [%s]", srcFilePath)
 	}
 	fs := stream.FileStream{ 
 		Obj: srcFile,
@@ -172,7 +172,7 @@ func copyFileBetween2Storages(tsk *CopyTask, srcStorage, dstStorage driver.Drive
 	// any link provided is seekable
 	ss, err := stream.NewSeekableStream(fs, link)
 	if err != nil {
-		return errors.WithMessagef(err, "流媒体获取失败: [%s]" + "Failed get stream: [%s]", srcFilePath)
+		return errors.WithMessagef(err, "流媒体获取失败: [%s]", srcFilePath)
 	}
 	return op.Put(tsk.Ctx(), dstStorage, dstDirPath, ss, tsk.SetProgress, true)
 }

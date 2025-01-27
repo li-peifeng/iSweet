@@ -21,11 +21,11 @@ type UploadTask struct {
 }
 
 func (t *UploadTask) GetName() string {
-	return fmt.Sprintf("%s 上传到 (Upload To): [%s](%s)", t.file.GetName(), t.storage.GetStorage().MountPath, t.dstDirActualPath)
+	return fmt.Sprintf("上传 %s 到: [%s](%s)", t.file.GetName(), t.storage.GetStorage().MountPath, t.dstDirActualPath)
 }
 
 func (t *UploadTask) GetStatus() string {
-	return "上传中 (Uploading) ..."
+	return "正在上传中..."
 }
 
 func (t *UploadTask) Run() error {
@@ -41,7 +41,7 @@ var UploadTaskManager *tache.Manager[*UploadTask]
 func putAsTask(ctx context.Context, dstDirPath string, file model.FileStreamer) (task.TaskExtensionInfo, error) {
 	storage, dstDirActualPath, err := op.GetStorageAndActualPath(dstDirPath)
 	if err != nil {
-		return nil, errors.WithMessage(err, "存储获取失败" + "Failed get storage")
+		return nil, errors.WithMessage(err, "存储获取失败")
 	}
 	if storage.Config().NoUpload {
 		return nil, errors.WithStack(errs.UploadNotSupported)
@@ -49,7 +49,7 @@ func putAsTask(ctx context.Context, dstDirPath string, file model.FileStreamer) 
 	if file.NeedStore() {
 		_, err := file.CacheFullInTempFile()
 		if err != nil {
-			return nil, errors.Wrapf(err, "临时文件创建失败" + "Failed to create temp file")
+			return nil, errors.Wrapf(err, "临时文件创建失败")
 		}
 		//file.SetReader(tempFile)
 		//file.SetTmpFile(tempFile)
@@ -72,7 +72,7 @@ func putAsTask(ctx context.Context, dstDirPath string, file model.FileStreamer) 
 func putDirectly(ctx context.Context, dstDirPath string, file model.FileStreamer, lazyCache ...bool) error {
 	storage, dstDirActualPath, err := op.GetStorageAndActualPath(dstDirPath)
 	if err != nil {
-		return errors.WithMessage(err, "存储获取失败" + "Failed get storage")
+		return errors.WithMessage(err, "存储获取失败")
 	}
 	if storage.Config().NoUpload {
 		return errors.WithStack(errs.UploadNotSupported)

@@ -81,17 +81,17 @@ func getTargetedHandler[T task.TaskExtensionInfo](manager task.Manager[T], callb
 		isAdmin, uid, ok := getUserInfo(c)
 		if !ok {
 			// if there is no bug, here is unreachable
-			common.ErrorStrResp(c, "当前用户无效" + "User invalid", 401)
+			common.ErrorStrResp(c, "当前用户无效", 401)
 			return
 		}
 		t, ok := manager.GetByID(c.Query("tid"))
 		if !ok {
-			common.ErrorStrResp(c, "未找到任务" + "Task not found", 404)
+			common.ErrorStrResp(c, "未找到任务", 404)
 			return
 		}
 		if !isAdmin && uid != t.GetCreator().ID {
 			// to avoid an attacker using error messages to guess valid TID, return a 404 rather than a 403
-			common.ErrorStrResp(c, "未找到任务" + "Task not found", 404)
+			common.ErrorStrResp(c, "未找到任务", 404)
 			return
 		}
 		callback(c, t)
@@ -102,19 +102,19 @@ func getBatchHandler[T task.TaskExtensionInfo](manager task.Manager[T], callback
 	return func(c *gin.Context) {
 		isAdmin, uid, ok := getUserInfo(c)
 		if !ok {
-			common.ErrorStrResp(c, "当前用户无效" + "User invalid", 401)
+			common.ErrorStrResp(c, "当前用户无效", 401)
 			return
 		}
 		var tids []string
 		if err := c.ShouldBind(&tids); err != nil {
-			common.ErrorStrResp(c, "请求格式无效" + "Invalid request format", 400)
+			common.ErrorStrResp(c, "请求格式无效", 400)
 			return
 		}
 		retErrs := make(map[string]string)
 		for _, tid := range tids {
 			t, ok := manager.GetByID(tid)
 			if !ok || (!isAdmin && uid != t.GetCreator().ID) {
-				retErrs[tid] = "未找到任务" + "Task not found"
+				retErrs[tid] = "未找到任务"
 				continue
 			}
 			callback(t)
@@ -128,7 +128,7 @@ func taskRoute[T task.TaskExtensionInfo](g *gin.RouterGroup, manager task.Manage
 		isAdmin, uid, ok := getUserInfo(c)
 		if !ok {
 			// if there is no bug, here is unreachable
-			common.ErrorStrResp(c, "当前用户无效" + "User invalid", 401)
+			common.ErrorStrResp(c, "当前用户无效", 401)
 			return
 		}
 		common.SuccessResp(c, getTaskInfos(manager.GetByCondition(func(task T) bool {
@@ -142,7 +142,7 @@ func taskRoute[T task.TaskExtensionInfo](g *gin.RouterGroup, manager task.Manage
 		isAdmin, uid, ok := getUserInfo(c)
 		if !ok {
 			// if there is no bug, here is unreachable
-			common.ErrorStrResp(c, "当前用户无效" + "User invalid", 401)
+			common.ErrorStrResp(c, "当前用户无效", 401)
 			return
 		}
 		common.SuccessResp(c, getTaskInfos(manager.GetByCondition(func(task T) bool {
@@ -178,7 +178,7 @@ func taskRoute[T task.TaskExtensionInfo](g *gin.RouterGroup, manager task.Manage
 		isAdmin, uid, ok := getUserInfo(c)
 		if !ok {
 			// if there is no bug, here is unreachable
-			common.ErrorStrResp(c, "当前用户无效" + "User invalid", 401)
+			common.ErrorStrResp(c, "当前用户无效", 401)
 			return
 		}
 		manager.RemoveByCondition(func(task T) bool {
@@ -191,7 +191,7 @@ func taskRoute[T task.TaskExtensionInfo](g *gin.RouterGroup, manager task.Manage
 		isAdmin, uid, ok := getUserInfo(c)
 		if !ok {
 			// if there is no bug, here is unreachable
-			common.ErrorStrResp(c, "当前用户无效" + "User invalid", 401)
+			common.ErrorStrResp(c, "当前用户无效", 401)
 			return
 		}
 		manager.RemoveByCondition(func(task T) bool {
@@ -203,7 +203,7 @@ func taskRoute[T task.TaskExtensionInfo](g *gin.RouterGroup, manager task.Manage
 		isAdmin, uid, ok := getUserInfo(c)
 		if !ok {
 			// if there is no bug, here is unreachable
-			common.ErrorStrResp(c, "当前用户无效" + "User invalid", 401)
+			common.ErrorStrResp(c, "当前用户无效", 401)
 			return
 		}
 		tasks := manager.GetByCondition(func(task T) bool {

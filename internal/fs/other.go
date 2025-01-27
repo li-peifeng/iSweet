@@ -12,7 +12,7 @@ import (
 func makeDir(ctx context.Context, path string, lazyCache ...bool) error {
 	storage, actualPath, err := op.GetStorageAndActualPath(path)
 	if err != nil {
-		return errors.WithMessage(err, "存储获取失败" + "Failed get storage")
+		return errors.WithMessage(err, "存储获取失败")
 	}
 	return op.MakeDir(ctx, storage, actualPath, lazyCache...)
 }
@@ -20,11 +20,11 @@ func makeDir(ctx context.Context, path string, lazyCache ...bool) error {
 func move(ctx context.Context, srcPath, dstDirPath string, lazyCache ...bool) error {
 	srcStorage, srcActualPath, err := op.GetStorageAndActualPath(srcPath)
 	if err != nil {
-		return errors.WithMessage(err, "源存储获取失败" + "Failed get SRC storage")
+		return errors.WithMessage(err, "源存储获取失败")
 	}
 	dstStorage, dstDirActualPath, err := op.GetStorageAndActualPath(dstDirPath)
 	if err != nil {
-		return errors.WithMessage(err, "目标存储获取失败" + "Failed get DST storage")
+		return errors.WithMessage(err, "目标存储获取失败")
 	}
 	if srcStorage.GetStorage() != dstStorage.GetStorage() {
 		return errors.WithStack(errs.MoveBetweenTwoStorages)
@@ -35,7 +35,7 @@ func move(ctx context.Context, srcPath, dstDirPath string, lazyCache ...bool) er
 func rename(ctx context.Context, srcPath, dstName string, lazyCache ...bool) error {
 	storage, srcActualPath, err := op.GetStorageAndActualPath(srcPath)
 	if err != nil {
-		return errors.WithMessage(err, "存储获取失败" + "Failed get storage")
+		return errors.WithMessage(err, "存储获取失败")
 	}
 	return op.Rename(ctx, storage, srcActualPath, dstName, lazyCache...)
 }
@@ -43,7 +43,7 @@ func rename(ctx context.Context, srcPath, dstName string, lazyCache ...bool) err
 func remove(ctx context.Context, path string) error {
 	storage, actualPath, err := op.GetStorageAndActualPath(path)
 	if err != nil {
-		return errors.WithMessage(err, "存储获取失败" + "Failed get storage")
+		return errors.WithMessage(err, "存储获取失败")
 	}
 	return op.Remove(ctx, storage, actualPath)
 }
@@ -51,7 +51,7 @@ func remove(ctx context.Context, path string) error {
 func other(ctx context.Context, args model.FsOtherArgs) (interface{}, error) {
 	storage, actualPath, err := op.GetStorageAndActualPath(args.Path)
 	if err != nil {
-		return nil, errors.WithMessage(err, "存储获取失败" + "Failed get storage")
+		return nil, errors.WithMessage(err, "存储获取失败")
 	}
 	args.Path = actualPath
 	return op.Other(ctx, storage, args)

@@ -69,7 +69,7 @@ func FsMove(c *gin.Context) {
 		return
 	}
 	if len(req.Names) == 0 {
-		common.ErrorStrResp(c, "空文件名" + "Empty file names", 400)
+		common.ErrorStrResp(c, "空文件名", 400)
 		return
 	}
 	user := c.MustGet("user").(*model.User)
@@ -90,7 +90,7 @@ func FsMove(c *gin.Context) {
 	if !req.Overwrite {
 		for _, name := range req.Names {
 			if res, _ := fs.Get(c, stdpath.Join(dstDir, name), &fs.GetArgs{NoLog: true}); res != nil {
-				common.ErrorStrResp(c, "file exists", 403)
+				common.ErrorStrResp(c, "文件已存在", 403)
 				return
 			}
 		}
@@ -112,7 +112,7 @@ func FsCopy(c *gin.Context) {
 		return
 	}
 	if len(req.Names) == 0 {
-		common.ErrorStrResp(c, "空文件名" + "Empty file names", 400)
+		common.ErrorStrResp(c, "空文件名", 400)
 		return
 	}
 	user := c.MustGet("user").(*model.User)
@@ -133,7 +133,7 @@ func FsCopy(c *gin.Context) {
 	if !req.Overwrite {
 		for _, name := range req.Names {
 			if res, _ := fs.Get(c, stdpath.Join(dstDir, name), &fs.GetArgs{NoLog: true}); res != nil {
-				common.ErrorStrResp(c, "file exists", 403)
+				common.ErrorStrResp(c, "文件已存在", 403)
 				return
 			}
 		}
@@ -180,7 +180,7 @@ func FsRename(c *gin.Context) {
 		dstPath := stdpath.Join(stdpath.Dir(reqPath), req.Name)
 		if dstPath != reqPath {
 			if res, _ := fs.Get(c, dstPath, &fs.GetArgs{NoLog: true}); res != nil {
-				common.ErrorStrResp(c, "file exists", 403)
+				common.ErrorStrResp(c, "文件已存在", 403)
 				return
 			}
 		}
@@ -204,7 +204,7 @@ func FsRemove(c *gin.Context) {
 		return
 	}
 	if len(req.Names) == 0 {
-		common.ErrorStrResp(c, "空文件名" + "Empty file names", 400)
+		common.ErrorStrResp(c, "空文件名", 400)
 		return
 	}
 	user := c.MustGet("user").(*model.User)
@@ -361,7 +361,7 @@ func Link(c *gin.Context) {
 		defer func(ReadSeekCloser io.ReadCloser) {
 			err := ReadSeekCloser.Close()
 			if err != nil {
-				log.Errorf("close link data error: %v", err)
+				log.Errorf("关闭链接数据错误: %v", err)
 			}
 		}(link.MFile)
 	}

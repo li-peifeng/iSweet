@@ -43,25 +43,25 @@ func ParseToken(tokenString string) (*UserClaims, error) {
 		return SecretKey, nil
 	})
 	if IsTokenInvalidated(tokenString) {
-		return nil, errors.New("令牌已失效" + "Token is invalidated")
+		return nil, errors.New("令牌已失效")
 	}
 	if err != nil {
 		if ve, ok := err.(*jwt.ValidationError); ok {
 			if ve.Errors&jwt.ValidationErrorMalformed != 0 {
-				return nil, errors.New("这不是一个令牌" + "That's not even a token")
+				return nil, errors.New("这不是一个令牌")
 			} else if ve.Errors&jwt.ValidationErrorExpired != 0 {
-				return nil, errors.New("令牌已过期" + "Token is expired")
+				return nil, errors.New("令牌已过期")
 			} else if ve.Errors&jwt.ValidationErrorNotValidYet != 0 {
-				return nil, errors.New("令牌尚未激活" + "Token not active yet")
+				return nil, errors.New("令牌尚未激活")
 			} else {
-				return nil, errors.New("无法处理此令牌" + "Couldn't handle this token")
+				return nil, errors.New("无法处理此令牌")
 			}
 		}
 	}
 	if claims, ok := token.Claims.(*UserClaims); ok && token.Valid {
 		return claims, nil
 	}
-	return nil, errors.New("无法处理此令牌" + "Couldn't handle this token")
+	return nil, errors.New("无法处理此令牌")
 }
 
 func InvalidateToken(tokenString string) error {

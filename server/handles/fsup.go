@@ -44,7 +44,7 @@ func FsStream(c *gin.Context) {
 	if !overwrite {
 		if res, _ := fs.Get(c, path, &fs.GetArgs{NoLog: true}); res != nil {
 			_, _ = io.Copy(io.Discard, c.Request.Body)
-			common.ErrorStrResp(c, "file exists", 403)
+			common.ErrorStrResp(c, "文件已存在", 403)
 			return
 		}
 	}
@@ -103,7 +103,7 @@ func FsForm(c *gin.Context) {
 	if !overwrite {
 		if res, _ := fs.Get(c, path, &fs.GetArgs{NoLog: true}); res != nil {
 			_, _ = io.Copy(io.Discard, c.Request.Body)
-			common.ErrorStrResp(c, "file exists", 403)
+			common.ErrorStrResp(c, "文件已存在", 403)
 			return
 		}
 	}
@@ -113,7 +113,7 @@ func FsForm(c *gin.Context) {
 		return
 	}
 	if storage.Config().NoUpload {
-		common.ErrorStrResp(c, "当前存储不支持上传" + "Current storage doesn't support upload", 405)
+		common.ErrorStrResp(c, "当前存储不支持上传", 405)
 		return
 	}
 	file, err := c.FormFile("file")

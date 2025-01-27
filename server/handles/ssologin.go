@@ -62,12 +62,12 @@ func SSOLoginRedirect(c *gin.Context) {
 	platform := setting.GetStr(conf.SSOLoginPlatform)
 	var rUrl string
 	if !enabled {
-		common.ErrorStrResp(c, "Single sign-on is not enabled", 403)
+		common.ErrorStrResp(c, "未启用单点登录", 403)
 		return
 	}
 	urlValues := url.Values{}
 	if method == "" {
-		common.ErrorStrResp(c, "no method provided", 400)
+		common.ErrorStrResp(c, "没有提供方法", 400)
 		return
 	}
 	redirectUri := ssoRedirectUri(c, useCompatibility, method)
@@ -105,7 +105,7 @@ func SSOLoginRedirect(c *gin.Context) {
 		c.Redirect(http.StatusFound, oauth2Config.AuthCodeURL(state))
 		return
 	default:
-		common.ErrorStrResp(c, "invalid platform", 400)
+		common.ErrorStrResp(c, "平台无效", 400)
 		return
 	}
 	c.Redirect(302, rUrl+urlValues.Encode())
@@ -146,7 +146,7 @@ func autoRegister(username, userID string, err error) (*model.User, error) {
 		return nil, err
 	}
 	if username == "" {
-		return nil, errors.New("cannot get username from SSO provider")
+		return nil, errors.New("无法从 SSO 提供商获取用户名")
 	}
 	user := &model.User{
 		ID:         0,
@@ -174,11 +174,11 @@ func autoRegister(username, userID string, err error) (*model.User, error) {
 func parseJWT(p string) ([]byte, error) {
 	parts := strings.Split(p, ".")
 	if len(parts) < 2 {
-		return nil, fmt.Errorf("oidc: malformed jwt, expected 3 parts got %d", len(parts))
+		return nil, fmt.Errorf("oidc：jwt格式错误，预期3个部分，但得到 %d", len(parts))
 	}
 	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {
-		return nil, fmt.Errorf("oidc: malformed jwt payload: %v", err)
+		return nil, fmt.Errorf("oidc：jwt负载格式错误： %v", err)
 	}
 	return payload, nil
 }
@@ -202,7 +202,7 @@ func OIDCLoginCallback(c *gin.Context) {
 		return
 	}
 	if !verifyState(clientId, c.ClientIP(), c.Query("state")) {
-		common.ErrorStrResp(c, "incorrect or expired state parameter", 400)
+		common.ErrorStrResp(c, "状态参数不正确或过期", 400)
 		return
 	}
 
@@ -213,7 +213,7 @@ func OIDCLoginCallback(c *gin.Context) {
 	}
 	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
 	if !ok {
-		common.ErrorStrResp(c, "no id_token found in oauth2 token", 400)
+		common.ErrorStrResp(c, "在 oauth2 令牌中未找到 id_token", 400)
 		return
 	}
 	verifier := provider.Verifier(&oidc.Config{
@@ -231,7 +231,7 @@ func OIDCLoginCallback(c *gin.Context) {
 	}
 	userID := utils.Json.Get(payload, setting.GetStr(conf.SSOOIDCUsernameKey, "name")).ToString()
 	if userID == "" {
-		common.ErrorStrResp(c, "cannot get username from OIDC provider", 400)
+		common.ErrorStrResp(c, "无法从 OIDC 提供商获取用户名", 400)
 		return
 	}
 	if method == "get_sso_id" {
@@ -283,7 +283,7 @@ func SSOLoginCallback(c *gin.Context) {
 	enabled := setting.GetBool(conf.SSOLoginEnabled)
 	usecompatibility := setting.GetBool(conf.SSOCompatibilityMode)
 	if !enabled {
-		common.ErrorResp(c, errors.New("sso login is disabled"), 500)
+		common.ErrorResp(c, errors.New("sso 登录已禁用"), 500)
 		return
 	}
 	argument := c.Query("method")
@@ -291,7 +291,7 @@ func SSOLoginCallback(c *gin.Context) {
 		argument = path.Base(c.Request.URL.Path)
 	}
 	if !utils.SliceContains([]string{"get_sso_id", "sso_get_token"}, argument) {
-		common.ErrorResp(c, errors.New("invalid request"), 500)
+		common.ErrorResp(c, errors.New("请求无效"), 500)
 		return
 	}
 	clientId := setting.GetStr(conf.SSOClientId)
@@ -303,51 +303,51 @@ func SSOLoginCallback(c *gin.Context) {
 	case "Github":
 		tokenUrl = "https://github.com/login/oauth/access_token"
 		userUrl = "https://api.github.com/user"
-		authField = "code"
+		authField = "代码"
 		scope = "read:user"
-		idField = "id"
-		usernameField = "login"
+		idField = "ID"
+		usernameField = "登录"
 	case "Microsoft":
 		tokenUrl = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
 		userUrl = "https://graph.microsoft.com/v1.0/me"
 		additionalForm["grant_type"] = "authorization_code"
 		scope = "user.read"
-		authField = "code"
-		idField = "id"
-		usernameField = "displayName"
+		authField = "代码"
+		idField = "ID"
+		usernameField = "显示名"
 	case "Google":
 		tokenUrl = "https://oauth2.googleapis.com/token"
 		userUrl = "https://www.googleapis.com/oauth2/v1/userinfo"
 		additionalForm["grant_type"] = "authorization_code"
 		scope = "https://www.googleapis.com/auth/userinfo.profile"
-		authField = "code"
-		idField = "id"
-		usernameField = "name"
+		authField = "代码"
+		idField = "ID"
+		usernameField = "名字"
 	case "Dingtalk":
 		tokenUrl = "https://api.dingtalk.com/v1.0/oauth2/userAccessToken"
 		userUrl = "https://api.dingtalk.com/v1.0/contact/users/me"
-		authField = "authCode"
-		idField = "unionId"
-		usernameField = "nick"
+		authField = "代码"
+		idField = "联合ID"
+		usernameField = "昵称"
 	case "Casdoor":
 		endpoint := strings.TrimSuffix(setting.GetStr(conf.SSOEndpointName), "/")
 		tokenUrl = endpoint + "/api/login/oauth/access_token"
 		userUrl = endpoint + "/api/userinfo"
 		additionalForm["grant_type"] = "authorization_code"
 		scope = "profile"
-		authField = "code"
-		idField = "sub"
-		usernameField = "preferred_username"
+		authField = "代码"
+		idField = "SUB"
+		usernameField = "首选用户名"
 	case "OIDC":
 		OIDCLoginCallback(c)
 		return
 	default:
-		common.ErrorStrResp(c, "invalid platform", 400)
+		common.ErrorStrResp(c, "平台无效", 400)
 		return
 	}
 	callbackCode := c.Query(authField)
 	if callbackCode == "" {
-		common.ErrorStrResp(c, "No code provided", 400)
+		common.ErrorStrResp(c, "没有提供代码", 400)
 		return
 	}
 	var resp *resty.Response
@@ -396,7 +396,7 @@ func SSOLoginCallback(c *gin.Context) {
 	}
 	userID := utils.Json.Get(resp.Body(), idField).ToString()
 	if utils.SliceContains([]string{"", "0"}, userID) {
-		common.ErrorResp(c, errors.New("error occurred"), 400)
+		common.ErrorResp(c, errors.New("发生错误"), 400)
 		return
 	}
 	if argument == "get_sso_id" {
