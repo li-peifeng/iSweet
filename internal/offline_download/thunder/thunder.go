@@ -33,7 +33,7 @@ func (t *Thunder) Run(task *tool.DownloadTask) error {
 
 func (t *Thunder) Init() (string, error) {
 	t.refreshTaskCache = false
-	return "ok", nil
+	return "完成", nil
 }
 
 func (t *Thunder) IsReady() bool {
@@ -60,7 +60,7 @@ func (t *Thunder) AddURL(args *tool.AddUrlArgs) (string, error) {
 	}
 	thunderDriver, ok := storage.(*thunder.Thunder)
 	if !ok {
-		return "", fmt.Errorf("unsupported storage driver for offline download, only Thunder is supported")
+		return "", fmt.Errorf("不支持此存储，仅支持 Thunder")
 	}
 
 	ctx := context.Background()
@@ -76,7 +76,7 @@ func (t *Thunder) AddURL(args *tool.AddUrlArgs) (string, error) {
 
 	task, err := thunderDriver.OfflineDownload(ctx, args.Url, parentDir, "")
 	if err != nil {
-		return "", fmt.Errorf("failed to add offline download task: %w", err)
+		return "", fmt.Errorf("添加离线下载任务失败: %w", err)
 	}
 
 	return task.ID, nil
@@ -89,7 +89,7 @@ func (t *Thunder) Remove(task *tool.DownloadTask) error {
 	}
 	thunderDriver, ok := storage.(*thunder.Thunder)
 	if !ok {
-		return fmt.Errorf("unsupported storage driver for offline download, only Thunder is supported")
+		return fmt.Errorf("不支持此存储，仅支持 Thunder")
 	}
 	ctx := context.Background()
 	err = thunderDriver.DeleteOfflineTasks(ctx, []string{task.GID}, false)
@@ -106,7 +106,7 @@ func (t *Thunder) Status(task *tool.DownloadTask) (*tool.Status, error) {
 	}
 	thunderDriver, ok := storage.(*thunder.Thunder)
 	if !ok {
-		return nil, fmt.Errorf("unsupported storage driver for offline download, only Thunder is supported")
+		return nil, fmt.Errorf("不支持此存储，仅支持 Thunder")
 	}
 	tasks, err := t.GetTasks(thunderDriver)
 	if err != nil {
@@ -116,7 +116,7 @@ func (t *Thunder) Status(task *tool.DownloadTask) (*tool.Status, error) {
 		Progress:  0,
 		NewGID:    "",
 		Completed: false,
-		Status:    "the task has been deleted",
+		Status:    "任务已被删除",
 		Err:       nil,
 	}
 	for _, t := range tasks {
@@ -134,7 +134,7 @@ func (t *Thunder) Status(task *tool.DownloadTask) (*tool.Status, error) {
 			return s, nil
 		}
 	}
-	s.Err = fmt.Errorf("the task has been deleted")
+	s.Err = fmt.Errorf("任务已被删除")
 	return s, nil
 }
 

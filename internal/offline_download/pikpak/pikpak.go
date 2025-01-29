@@ -32,7 +32,7 @@ func (p *PikPak) Run(task *tool.DownloadTask) error {
 
 func (p *PikPak) Init() (string, error) {
 	p.refreshTaskCache = false
-	return "ok", nil
+	return "完成", nil
 }
 
 func (p *PikPak) IsReady() bool {
@@ -59,7 +59,7 @@ func (p *PikPak) AddURL(args *tool.AddUrlArgs) (string, error) {
 	}
 	pikpakDriver, ok := storage.(*pikpak.PikPak)
 	if !ok {
-		return "", fmt.Errorf("unsupported storage driver for offline download, only Pikpak is supported")
+		return "", fmt.Errorf("不支持此存储，仅支持 Pikpak")
 	}
 
 	ctx := context.Background()
@@ -75,7 +75,7 @@ func (p *PikPak) AddURL(args *tool.AddUrlArgs) (string, error) {
 
 	t, err := pikpakDriver.OfflineDownload(ctx, args.Url, parentDir, "")
 	if err != nil {
-		return "", fmt.Errorf("failed to add offline download task: %w", err)
+		return "", fmt.Errorf("添加离线下载任务失败: %w", err)
 	}
 
 	return t.ID, nil
@@ -88,7 +88,7 @@ func (p *PikPak) Remove(task *tool.DownloadTask) error {
 	}
 	pikpakDriver, ok := storage.(*pikpak.PikPak)
 	if !ok {
-		return fmt.Errorf("unsupported storage driver for offline download, only Pikpak is supported")
+		return fmt.Errorf("不支持此存储，仅支持 Pikpak")
 	}
 	ctx := context.Background()
 	err = pikpakDriver.DeleteOfflineTasks(ctx, []string{task.GID}, false)
@@ -105,7 +105,7 @@ func (p *PikPak) Status(task *tool.DownloadTask) (*tool.Status, error) {
 	}
 	pikpakDriver, ok := storage.(*pikpak.PikPak)
 	if !ok {
-		return nil, fmt.Errorf("unsupported storage driver for offline download, only Pikpak is supported")
+		return nil, fmt.Errorf("不支持此存储，仅支持 Pikpak")
 	}
 	tasks, err := p.GetTasks(pikpakDriver)
 	if err != nil {
@@ -115,7 +115,7 @@ func (p *PikPak) Status(task *tool.DownloadTask) (*tool.Status, error) {
 		Progress:  0,
 		NewGID:    "",
 		Completed: false,
-		Status:    "the task has been deleted",
+		Status:    "任务已被删除",
 		Err:       nil,
 	}
 	for _, t := range tasks {
@@ -133,7 +133,7 @@ func (p *PikPak) Status(task *tool.DownloadTask) (*tool.Status, error) {
 			return s, nil
 		}
 	}
-	s.Err = fmt.Errorf("the task has been deleted")
+	s.Err = fmt.Errorf("任务已被删除")
 	return s, nil
 }
 

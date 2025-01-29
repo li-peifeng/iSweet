@@ -31,7 +31,7 @@ func (p *Cloud115) Run(task *tool.DownloadTask) error {
 
 func (p *Cloud115) Init() (string, error) {
 	p.refreshTaskCache = false
-	return "ok", nil
+	return "完成", nil
 }
 
 func (p *Cloud115) IsReady() bool {
@@ -58,7 +58,7 @@ func (p *Cloud115) AddURL(args *tool.AddUrlArgs) (string, error) {
 	}
 	driver115, ok := storage.(*_115.Pan115)
 	if !ok {
-		return "", fmt.Errorf("unsupported storage driver for offline download, only 115 Cloud is supported")
+		return "", fmt.Errorf("不支持此存储，仅支持 115 Cloud")
 	}
 
 	ctx := context.Background()
@@ -74,7 +74,7 @@ func (p *Cloud115) AddURL(args *tool.AddUrlArgs) (string, error) {
 
 	hashs, err := driver115.OfflineDownload(ctx, []string{args.Url}, parentDir)
 	if err != nil || len(hashs) < 1 {
-		return "", fmt.Errorf("failed to add offline download task: %w", err)
+		return "", fmt.Errorf("添加离线下载任务失败: %w", err)
 	}
 
 	return hashs[0], nil
@@ -87,7 +87,7 @@ func (p *Cloud115) Remove(task *tool.DownloadTask) error {
 	}
 	driver115, ok := storage.(*_115.Pan115)
 	if !ok {
-		return fmt.Errorf("unsupported storage driver for offline download, only 115 Cloud is supported")
+		return fmt.Errorf("不支持此存储，仅支持 115 Cloud")
 	}
 
 	ctx := context.Background()
@@ -104,7 +104,7 @@ func (p *Cloud115) Status(task *tool.DownloadTask) (*tool.Status, error) {
 	}
 	driver115, ok := storage.(*_115.Pan115)
 	if !ok {
-		return nil, fmt.Errorf("unsupported storage driver for offline download, only 115 Cloud is supported")
+		return nil, fmt.Errorf("不支持此存储，仅支持 115 Cloud")
 	}
 
 	tasks, err := driver115.OfflineList(context.Background())
@@ -116,7 +116,7 @@ func (p *Cloud115) Status(task *tool.DownloadTask) (*tool.Status, error) {
 		Progress:  0,
 		NewGID:    "",
 		Completed: false,
-		Status:    "the task has been deleted",
+		Status:    "任务已被删除",
 		Err:       nil,
 	}
 	for _, t := range tasks {
@@ -131,7 +131,7 @@ func (p *Cloud115) Status(task *tool.DownloadTask) (*tool.Status, error) {
 			return s, nil
 		}
 	}
-	s.Err = fmt.Errorf("the task has been deleted")
+	s.Err = fmt.Errorf("任务已被删除")
 	return nil, nil
 }
 

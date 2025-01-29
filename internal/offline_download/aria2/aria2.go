@@ -45,15 +45,15 @@ func (a *Aria2) Init() (string, error) {
 	secret := setting.GetStr(conf.Aria2Secret)
 	c, err := rpc.New(context.Background(), uri, secret, 4*time.Second, notify)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to init aria2 client")
+		return "", errors.Wrap(err, "无法初始化 aria2 客户端")
 	}
 	version, err := c.GetVersion()
 	if err != nil {
-		return "", errors.Wrapf(err, "failed get aria2 version")
+		return "", errors.Wrapf(err, "无法获取 aria2 版本")
 	}
 	a.client = c
 	log.Infof("using aria2 version: %s", version.Version)
-	return fmt.Sprintf("aria2 version: %s", version.Version), nil
+	return fmt.Sprintf("aria2 版本: %s", version.Version), nil
 }
 
 func (a *Aria2) IsReady() bool {
@@ -105,7 +105,7 @@ func (a *Aria2) Status(task *tool.DownloadTask) (*tool.Status, error) {
 	case "complete":
 		s.Completed = true
 	case "error":
-		s.Err = errors.Errorf("failed to download %s, error: %s", task.GID, info.ErrorMessage)
+		s.Err = errors.Errorf("下载失败 %s, 错误: %s", task.GID, info.ErrorMessage)
 	case "active":
 		s.Status = "aria2: " + info.Status
 		if info.Seeder == "true" {
@@ -114,9 +114,9 @@ func (a *Aria2) Status(task *tool.DownloadTask) (*tool.Status, error) {
 	case "waiting", "paused":
 		s.Status = "aria2: " + info.Status
 	case "removed":
-		s.Err = errors.Errorf("failed to download %s, removed", task.GID)
+		s.Err = errors.Errorf("下载失败 %s, 已移除", task.GID)
 	default:
-		return nil, errors.Errorf("[aria2] unknown status %s", info.Status)
+		return nil, errors.Errorf("[aria2] 状态未知 %s", info.Status)
 	}
 	return s, nil
 }

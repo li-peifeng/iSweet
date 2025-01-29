@@ -38,7 +38,7 @@ func (a *QBittorrent) Init() (string, error) {
 		return "", err
 	}
 	a.client = qbClient
-	return "ok", nil
+	return "完成", nil
 }
 
 func (a *QBittorrent) IsReady() bool {
@@ -70,11 +70,11 @@ func (a *QBittorrent) Status(task *tool.DownloadTask) (*tool.Status, error) {
 	case qbittorrent.UPLOADING, qbittorrent.PAUSEDUP, qbittorrent.QUEUEDUP, qbittorrent.STALLEDUP, qbittorrent.FORCEDUP, qbittorrent.CHECKINGUP:
 		s.Completed = true
 	case qbittorrent.ALLOCATING, qbittorrent.DOWNLOADING, qbittorrent.METADL, qbittorrent.PAUSEDDL, qbittorrent.QUEUEDDL, qbittorrent.STALLEDDL, qbittorrent.CHECKINGDL, qbittorrent.FORCEDDL, qbittorrent.CHECKINGRESUMEDATA, qbittorrent.MOVING:
-		s.Status = "[qBittorrent] downloading"
+		s.Status = "[qBittorrent] 下载中"
 	case qbittorrent.ERROR, qbittorrent.MISSINGFILES, qbittorrent.UNKNOWN:
-		s.Err = errors.Errorf("[qBittorrent] failed to download %s, error: %s", task.GID, info.State)
+		s.Err = errors.Errorf("[qBittorrent] 下载失败 %s, 错误: %s", task.GID, info.State)
 	default:
-		s.Err = errors.Errorf("[qBittorrent] unknown error occurred downloading %s", task.GID)
+		s.Err = errors.Errorf("[qBittorrent] 下载时发生未知错误 %s", task.GID)
 	}
 	return s, nil
 }

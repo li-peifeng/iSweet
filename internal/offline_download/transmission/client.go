@@ -45,20 +45,20 @@ func (t *Transmission) Init() (string, error) {
 	uri := setting.GetStr(conf.TransmissionUri)
 	endpoint, err := url.Parse(uri)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to init transmission client")
+		return "", errors.Wrap(err, "transmission 客户端初始化失败")
 	}
 	c, err := transmissionrpc.New(endpoint, nil)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to init transmission client")
+		return "", errors.Wrap(err, "transmission 客户端初始化失败")
 	}
 
 	ok, serverVersion, serverMinimumVersion, err := c.RPCVersion(context.Background())
 	if err != nil {
-		return "", errors.Wrapf(err, "failed get transmission version")
+		return "", errors.Wrapf(err, "无法获取 transmission 版本")
 	}
 
 	if !ok {
-		return "", fmt.Errorf("remote transmission RPC version (v%d) is incompatible with the transmission library (v%d): remote needs at least v%d",
+		return "", fmt.Errorf("远程 transmission RPC 版本是 (v%d)，不兼容版本 (v%d)， 需要更新至版本 v%d",
 			serverVersion, transmissionrpc.RPCVersion, serverMinimumVersion)
 	}
 
@@ -66,7 +66,7 @@ func (t *Transmission) Init() (string, error) {
 	log.Infof("remote transmission RPC version (v%d) is compatible with our transmissionrpc library (v%d)\n",
 		serverVersion, transmissionrpc.RPCVersion)
 	log.Infof("using transmission version: %d", serverVersion)
-	return fmt.Sprintf("transmission version: %d", serverVersion), nil
+	return fmt.Sprintf("transmission 版本: %d", serverVersion), nil
 }
 
 func (t *Transmission) IsReady() bool {
@@ -76,7 +76,7 @@ func (t *Transmission) IsReady() bool {
 func (t *Transmission) AddURL(args *tool.AddUrlArgs) (string, error) {
 	endpoint, err := url.Parse(args.Url)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to parse transmission uri")
+		return "", errors.Wrap(err, "transmission 无法解析 URL")
 	}
 
 	rpcPayload := transmissionrpc.TorrentAddPayload{
@@ -86,18 +86,18 @@ func (t *Transmission) AddURL(args *tool.AddUrlArgs) (string, error) {
 	if endpoint.Scheme == "http" || endpoint.Scheme == "https" {
 		resp, err := http.Get(args.Url)
 		if err != nil {
-			return "", errors.Wrap(err, "failed to get .torrent file")
+			return "", errors.Wrap(err, "获取 .torrent 文件失败")
 		}
 		defer resp.Body.Close()
 		buffer := new(bytes.Buffer)
 		encoder := base64.NewEncoder(base64.StdEncoding, buffer)
 		// Stream file to the encoder
 		if _, err = utils.CopyWithBuffer(encoder, resp.Body); err != nil {
-			return "", errors.Wrap(err, "can't copy file content into the base64 encoder")
+			return "", errors.Wrap(err, "无法将文件内容复制到 base64 编码器")
 		}
 		// Flush last bytes
 		if err = encoder.Close(); err != nil {
-			return "", errors.Wrap(err, "can't flush last bytes of the base64 encoder")
+			return "", errors.Wrap(err, "无法刷新 base64 编码器的最后几个字节")
 		}
 		// Get the string form
 		b64 := buffer.String()
@@ -112,7 +112,7 @@ func (t *Transmission) AddURL(args *tool.AddUrlArgs) (string, error) {
 	}
 
 	if torrent.ID == nil {
-		return "", fmt.Errorf("failed get torrent ID")
+		return "", fmt.Errorf("无法获取 torrent ID")
 	}
 	gid := strconv.FormatInt(*torrent.ID, 10)
 	return gid, nil
@@ -141,7 +141,7 @@ func (t *Transmission) Status(task *tool.DownloadTask) (*tool.Status, error) {
 	}
 
 	if len(infos) < 1 {
-		return nil, fmt.Errorf("failed get status, wrong gid: %s", task.GID)
+		return nil, fmt.Errorf("获取状态失败，错误的 GID: %s", task.GID)
 	}
 	info := infos[0]
 
@@ -163,9 +163,9 @@ func (t *Transmission) Status(task *tool.DownloadTask) (*tool.Status, error) {
 		transmissionrpc.TorrentStatusSeed:
 		s.Completed = true
 	case transmissionrpc.TorrentStatusStopped:
-		s.Err = errors.Errorf("[transmission] failed to download %s, status: %s, error: %s", task.GID, info.Status.String(), *info.ErrorString)
+		s.Err = errors.Errorf("[transmission] 下载失败 %s, 状态: %s, 错误: %s", task.GID, info.Status.String(), *info.ErrorString)
 	default:
-		s.Err = errors.Errorf("[transmission] unknown status occurred downloading %s, err: %s", task.GID, *info.ErrorString)
+		s.Err = errors.Errorf("[transmission] 下载时发生未知状态 %s, 错误: %s", task.GID, *info.ErrorString)
 	}
 	return s, nil
 }
