@@ -161,6 +161,7 @@ func (d *Wopan) Put(ctx context.Context, dstDir model.Obj, stream model.FileStre
 		OnProgress: func(current, total int64) {
 			up(100 * float64(current) / float64(total))
 		},
+		Ctx: ctx,
 	})
 	return err
 }

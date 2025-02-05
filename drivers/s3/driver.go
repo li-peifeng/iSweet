@@ -163,18 +163,21 @@ func (d *S3) Remove(ctx context.Context, obj model.Obj) error {
 	return d.removeFile(obj.GetPath())
 }
 
-func (d *S3) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) error {
+func (d *S3) Put(ctx context.Context, dstDir model.Obj, s model.FileStreamer, up driver.UpdateProgress) error {
 	uploader := s3manager.NewUploader(d.Session)
-	if stream.GetSize() > s3manager.MaxUploadParts*s3manager.DefaultUploadPartSize {
-		uploader.PartSize = stream.GetSize() / (s3manager.MaxUploadParts - 1)
+	if s.GetSize() > s3manager.MaxUploadParts*s3manager.DefaultUploadPartSize {
+		uploader.PartSize = s.GetSize() / (s3manager.MaxUploadParts - 1)
 	}
-	key := getKey(stdpath.Join(dstDir.GetPath(), stream.GetName()), false)
-	contentType := stream.GetMimetype()
+	key := getKey(stdpath.Join(dstDir.GetPath(), s.GetName()), false)
+	contentType := s.GetMimetype()
 	log.Debugln("key:", key)
 	input := &s3manager.UploadInput{
-		Bucket:      &d.Bucket,
-		Key:         &key,
-		Body:        stream,
+		Bucket: &d.Bucket,
+		Key:    &key,
+		Body: &stream.ReaderUpdatingProgress{
+			Reader:         s,
+			UpdateProgress: up,
+		},
 		ContentType: &contentType,
 	}
 	_, err := uploader.UploadWithContext(ctx, input)

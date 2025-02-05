@@ -3,6 +3,7 @@ package alist_v3
 import (
 	"context"
 	"fmt"
+	"github.com/alist-org/alist/v3/internal/stream"
 	"io"
 	"net/http"
 	"path"
@@ -181,25 +182,28 @@ func (d *AListV3) Remove(ctx context.Context, obj model.Obj) error {
 	return err
 }
 
-func (d *AListV3) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, d.Address+"/api/fs/put", stream)
+func (d *AListV3) Put(ctx context.Context, dstDir model.Obj, s model.FileStreamer, up driver.UpdateProgress) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, d.Address+"/api/fs/put", &stream.ReaderUpdatingProgress{
+		Reader:         s,
+		UpdateProgress: up,
+	})
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Authorization", d.Token)
-	req.Header.Set("File-Path", path.Join(dstDir.GetPath(), stream.GetName()))
+	req.Header.Set("File-Path", path.Join(dstDir.GetPath(), s.GetName()))
 	req.Header.Set("Password", d.MetaPassword)
-	if md5 := stream.GetHash().GetHash(utils.MD5); len(md5) > 0 {
+	if md5 := s.GetHash().GetHash(utils.MD5); len(md5) > 0 {
 		req.Header.Set("X-File-Md5", md5)
 	}
-	if sha1 := stream.GetHash().GetHash(utils.SHA1); len(sha1) > 0 {
+	if sha1 := s.GetHash().GetHash(utils.SHA1); len(sha1) > 0 {
 		req.Header.Set("X-File-Sha1", sha1)
 	}
-	if sha256 := stream.GetHash().GetHash(utils.SHA256); len(sha256) > 0 {
+	if sha256 := s.GetHash().GetHash(utils.SHA256); len(sha256) > 0 {
 		req.Header.Set("X-File-Sha256", sha256)
 	}
 
-	req.ContentLength = stream.GetSize()
+	req.ContentLength = s.GetSize()
 	// client := base.NewHttpClient()
 	// client.Timeout = time.Hour * 6
 	res, err := base.HttpClient.Do(req)

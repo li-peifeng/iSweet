@@ -2,6 +2,7 @@ package webdav
 
 import (
 	"context"
+	"github.com/alist-org/alist/v3/internal/stream"
 	"net/http"
 	"os"
 	"path"
@@ -93,13 +94,18 @@ func (d *WebDav) Remove(ctx context.Context, obj model.Obj) error {
 	return d.client.RemoveAll(getPath(obj))
 }
 
-func (d *WebDav) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) error {
+func (d *WebDav) Put(ctx context.Context, dstDir model.Obj, s model.FileStreamer, up driver.UpdateProgress) error {
 	callback := func(r *http.Request) {
-		r.Header.Set("Content-Type", stream.GetMimetype())
-		r.ContentLength = stream.GetSize()
+		r.Header.Set("Content-Type", s.GetMimetype())
+		r.ContentLength = s.GetSize()
 	}
-	// TODO: support cancel
-	err := d.client.WriteStream(path.Join(dstDir.GetPath(), stream.GetName()), stream, 0644, callback)
+	err := d.client.WriteStream(path.Join(dstDir.GetPath(), s.GetName()), &stream.ReaderWithCtx{
+		Reader: &stream.ReaderUpdatingProgress{
+			Reader:         s,
+			UpdateProgress: up,
+		},
+		Ctx: ctx,
+	}, 0644, callback)
 	return err
 }
 

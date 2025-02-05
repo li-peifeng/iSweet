@@ -562,3 +562,17 @@ func (f *FileReadAtSeeker) Seek(offset int64, whence int) (int64, error) {
 func (f *FileReadAtSeeker) Close() error {
 	return f.ss.Close()
 }
+
+type ReaderWithCtx struct {
+	io.Reader
+	Ctx context.Context
+}
+
+func (r *ReaderWithCtx) Read(p []byte) (n int, err error) {
+	select {
+	case <-r.Ctx.Done():
+		return 0, r.Ctx.Err()
+	default:
+		return r.Reader.Read(p)
+	}
+}

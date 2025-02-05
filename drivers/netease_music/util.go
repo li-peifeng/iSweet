@@ -1,7 +1,9 @@
 package netease_music
 
 import (
-	"io"
+	"context"
+	"github.com/alist-org/alist/v3/internal/driver"
+	"github.com/alist-org/alist/v3/internal/stream"
 	"net/http"
 	"path"
 	"regexp"
@@ -58,20 +60,38 @@ func (d *NeteaseMusic) request(url, method string, opt ReqOption) ([]byte, error
 		url = "https://music.163.com/api/linux/forward"
 	}
 
+	if opt.ctx != nil {
+		req.SetContext(opt.ctx)
+	}
 	if method == http.MethodPost {
 		if opt.stream != nil {
+			if opt.up == nil {
+				opt.up = func(_ float64) {}
+			}
 			req.SetContentLength(true)
-			req.SetBody(io.ReadCloser(opt.stream))
+			req.SetBody(&InlineReadCloser{
+				Reader: &stream.ReaderUpdatingProgress{
+					Reader:         opt.stream,
+					UpdateProgress: opt.up,
+				},
+				Closer: opt.stream,
+			})
 		} else {
 			req.SetFormData(data)
 		}
 		res, err := req.Post(url)
-		return res.Body(), err
+		if err != nil {
+			return nil, err
+		}
+		return res.Body(), nil
 	}
 
 	if method == http.MethodGet {
 		res, err := req.Get(url)
-		return res.Body(), err
+		if err != nil {
+			return nil, err
+		}
+		return res.Body(), nil
 	}
 
 	return nil, errs.NotImplement
@@ -206,7 +226,7 @@ func (d *NeteaseMusic) removeSongObj(file model.Obj) error {
 	return err
 }
 
-func (d *NeteaseMusic) putSongStream(stream model.FileStreamer) error {
+func (d *NeteaseMusic) putSongStream(ctx context.Context, stream model.FileStreamer, up driver.UpdateProgress) error {
 	tmp, err := stream.CacheFullInTempFile()
 	if err != nil {
 		return err
@@ -231,7 +251,7 @@ func (d *NeteaseMusic) putSongStream(stream model.FileStreamer) error {
 	}
 
 	if u.meta.needUpload {
-		err = u.upload(stream)
+		err = u.upload(ctx, stream, up)
 		if err != nil {
 			return err
 		}

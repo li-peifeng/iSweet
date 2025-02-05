@@ -2,6 +2,7 @@ package ftp
 
 import (
 	"context"
+	"github.com/alist-org/alist/v3/internal/stream"
 	stdpath "path"
 
 	"github.com/alist-org/alist/v3/internal/driver"
@@ -114,13 +115,18 @@ func (d *FTP) Remove(ctx context.Context, obj model.Obj) error {
 	}
 }
 
-func (d *FTP) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) error {
+func (d *FTP) Put(ctx context.Context, dstDir model.Obj, s model.FileStreamer, up driver.UpdateProgress) error {
 	if err := d.login(); err != nil {
 		return err
 	}
-	// TODO: support cancel
-	path := stdpath.Join(dstDir.GetPath(), stream.GetName())
-	return d.conn.Stor(encode(path, d.Encoding), stream)
+	path := stdpath.Join(dstDir.GetPath(), s.GetName())
+	return d.conn.Stor(encode(path, d.Encoding), &stream.ReaderWithCtx{
+		Reader: &stream.ReaderUpdatingProgress{
+			Reader:         s,
+			UpdateProgress: up,
+		},
+		Ctx: ctx,
+	})
 }
 
 var _ driver.Driver = (*FTP)(nil)

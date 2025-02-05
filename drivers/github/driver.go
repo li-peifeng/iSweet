@@ -16,6 +16,7 @@ import (
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/stream"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/go-resty/resty/v2"
 	log "github.com/sirupsen/logrus"
@@ -649,15 +650,15 @@ func (d *Github) createGitKeep(path, message string) error {
 	return nil
 }
 
-func (d *Github) putBlob(ctx context.Context, stream model.FileStreamer, up driver.UpdateProgress) (string, error) {
+func (d *Github) putBlob(ctx context.Context, s model.FileStreamer, up driver.UpdateProgress) (string, error) {
 	beforeContent := "{\"encoding\":\"base64\",\"content\":\""
 	afterContent := "\"}"
-	length := int64(len(beforeContent)) + calculateBase64Length(stream.GetSize()) + int64(len(afterContent))
+	length := int64(len(beforeContent)) + calculateBase64Length(s.GetSize()) + int64(len(afterContent))
 	beforeContentReader := strings.NewReader(beforeContent)
 	contentReader, contentWriter := io.Pipe()
 	go func() {
 		encoder := base64.NewEncoder(base64.StdEncoding, contentWriter)
-		if _, err := utils.CopyWithBuffer(encoder, stream); err != nil {
+		if _, err := utils.CopyWithBuffer(encoder, s); err != nil {
 			_ = contentWriter.CloseWithError(err)
 			return
 		}
@@ -667,10 +668,12 @@ func (d *Github) putBlob(ctx context.Context, stream model.FileStreamer, up driv
 	afterContentReader := strings.NewReader(afterContent)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		fmt.Sprintf("https://api.github.com/repos/%s/%s/git/blobs", d.Owner, d.Repo),
-		&ReaderWithProgress{
-			Reader:   io.MultiReader(beforeContentReader, contentReader, afterContentReader),
-			Length:   length,
-			Progress: up,
+		&stream.ReaderUpdatingProgress{
+			Reader: &stream.SimpleReaderWithSize{
+				Reader: io.MultiReader(beforeContentReader, contentReader, afterContentReader),
+				Size:   length,
+			},
+			UpdateProgress: up,
 		})
 	if err != nil {
 		return "", err

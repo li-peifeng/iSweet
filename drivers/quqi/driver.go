@@ -3,6 +3,7 @@ package quqi
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"strconv"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/internal/model"
+	istream "github.com/alist-org/alist/v3/internal/stream"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/alist-org/alist/v3/pkg/utils/random"
 	"github.com/aws/aws-sdk-go/aws"
@@ -385,9 +387,16 @@ func (d *Quqi) Put(ctx context.Context, dstDir model.Obj, stream model.FileStrea
 	}
 	uploader := s3manager.NewUploader(s)
 	buf := make([]byte, 1024*1024*2)
+	fup := &istream.ReaderUpdatingProgress{
+		Reader: &istream.SimpleReaderWithSize{
+			Reader: f,
+			Size:   int64(len(buf)),
+		},
+		UpdateProgress: up,
+	}
 	for partNumber := int64(1); ; partNumber++ {
-		n, err := io.ReadFull(f, buf)
-		if err != nil && err != io.ErrUnexpectedEOF {
+		n, err := io.ReadFull(fup, buf)
+		if err != nil && !errors.Is(err, io.ErrUnexpectedEOF) {
 			if err == io.EOF {
 				break
 			}

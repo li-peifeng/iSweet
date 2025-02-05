@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/alist-org/alist/v3/internal/stream"
 	"io"
 	"net/http"
 	"net/url"
@@ -114,23 +115,18 @@ func (d *Trainbit) Remove(ctx context.Context, obj model.Obj) error {
 	return err
 }
 
-func (d *Trainbit) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) error {
+func (d *Trainbit) Put(ctx context.Context, dstDir model.Obj, s model.FileStreamer, up driver.UpdateProgress) error {
 	endpoint, _ := url.Parse("https://tb28.trainbit.com/api/upload/send_raw/")
 	query := &url.Values{}
 	query.Add("q", strings.Split(dstDir.GetID(), "_")[1])
 	query.Add("guid", guid)
-	query.Add("name", url.QueryEscape(local2provider(stream.GetName(), false)+"."))
+	query.Add("name", url.QueryEscape(local2provider(s.GetName(), false)+"."))
 	endpoint.RawQuery = query.Encode()
-	var total int64
-	total = 0
-	progressReader := &ProgressReader{
-		stream,
-		func(byteNum int) {
-			total += int64(byteNum)
-			up(float64(total) / float64(stream.GetSize()) * 100)
-		},
+	progressReader := &stream.ReaderUpdatingProgress{
+		Reader:         s,
+		UpdateProgress: up,
 	}
-	req, err := http.NewRequest(http.MethodPost, endpoint.String(), progressReader)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint.String(), progressReader)
 	if err != nil {
 		return err
 	}

@@ -2,6 +2,7 @@ package lanzou
 
 import (
 	"context"
+	"github.com/alist-org/alist/v3/internal/stream"
 	"net/http"
 
 	"github.com/alist-org/alist/v3/drivers/base"
@@ -208,7 +209,7 @@ func (d *LanZou) Remove(ctx context.Context, obj model.Obj) error {
 	return errs.NotSupport
 }
 
-func (d *LanZou) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) (model.Obj, error) {
+func (d *LanZou) Put(ctx context.Context, dstDir model.Obj, s model.FileStreamer, up driver.UpdateProgress) (model.Obj, error) {
 	if d.IsCookie() || d.IsAccount() {
 		var resp RespText[[]FileOrFolder]
 		_, err := d._post(d.BaseUrl+"/html5up.php", func(req *resty.Request) {
@@ -217,9 +218,12 @@ func (d *LanZou) Put(ctx context.Context, dstDir model.Obj, stream model.FileStr
 				"vie":            "2",
 				"ve":             "2",
 				"id":             "WU_FILE_0",
-				"name":           stream.GetName(),
+				"name":           s.GetName(),
 				"folder_id_bb_n": dstDir.GetID(),
-			}).SetFileReader("upload_file", stream.GetName(), stream).SetContext(ctx)
+			}).SetFileReader("upload_file", s.GetName(), &stream.ReaderUpdatingProgress{
+				Reader:         s,
+				UpdateProgress: up,
+			}).SetContext(ctx)
 		}, &resp, true)
 		if err != nil {
 			return nil, err

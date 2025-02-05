@@ -7,25 +7,9 @@ import (
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/go-resty/resty/v2"
-	"io"
-	"math"
 	"strings"
 	"text/template"
 )
-
-type ReaderWithProgress struct {
-	Reader   io.Reader
-	Length   int64
-	Progress func(percentage float64)
-	offset   int64
-}
-
-func (r *ReaderWithProgress) Read(p []byte) (int, error) {
-	n, err := r.Reader.Read(p)
-	r.offset += int64(n)
-	r.Progress(math.Min(100.0, float64(r.offset)/float64(r.Length)*100.0))
-	return n, err
-}
 
 type MessageTemplateVars struct {
 	UserName   string

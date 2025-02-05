@@ -2,17 +2,21 @@ package _115
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"crypto/tls"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/alist-org/alist/v3/internal/driver"
+	"github.com/alist-org/alist/v3/internal/stream"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/alist-org/alist/v3/internal/conf"
@@ -271,7 +275,7 @@ func UploadDigestRange(stream model.FileStreamer, rangeSpec string) (result stri
 }
 
 // UploadByOSS use aliyun sdk to upload
-func (c *Pan115) UploadByOSS(params *driver115.UploadOSSParams, r io.Reader, dirID string) (*UploadResult, error) {
+func (c *Pan115) UploadByOSS(ctx context.Context, params *driver115.UploadOSSParams, s model.FileStreamer, dirID string, up driver.UpdateProgress) (*UploadResult, error) {
 	ossToken, err := c.client.GetOSSToken()
 	if err != nil {
 		return nil, err
@@ -286,6 +290,13 @@ func (c *Pan115) UploadByOSS(params *driver115.UploadOSSParams, r io.Reader, dir
 	}
 
 	var bodyBytes []byte
+	r := &stream.ReaderWithCtx{
+		Reader: &stream.ReaderUpdatingProgress{
+			Reader:         s,
+			UpdateProgress: up,
+		},
+		Ctx: ctx,
+	}
 	if err = bucket.PutObject(params.Object, r, append(
 		driver115.OssOption(params, ossToken),
 		oss.CallbackResult(&bodyBytes),
@@ -301,7 +312,8 @@ func (c *Pan115) UploadByOSS(params *driver115.UploadOSSParams, r io.Reader, dir
 }
 
 // UploadByMultipart upload by mutipart blocks
-func (d *Pan115) UploadByMultipart(params *driver115.UploadOSSParams, fileSize int64, stream model.FileStreamer, dirID string, opts ...driver115.UploadMultipartOption) (*UploadResult, error) {
+func (d *Pan115) UploadByMultipart(ctx context.Context, params *driver115.UploadOSSParams, fileSize int64, s model.FileStreamer,
+	dirID string, up driver.UpdateProgress, opts ...driver115.UploadMultipartOption) (*UploadResult, error) {
 	var (
 		chunks    []oss.FileChunk
 		parts     []oss.UploadPart
@@ -313,7 +325,7 @@ func (d *Pan115) UploadByMultipart(params *driver115.UploadOSSParams, fileSize i
 		err       error
 	)
 
-	tmpF, err := stream.CacheFullInTempFile()
+	tmpF, err := s.CacheFullInTempFile()
 	if err != nil {
 		return nil, err
 	}
@@ -372,6 +384,7 @@ func (d *Pan115) UploadByMultipart(params *driver115.UploadOSSParams, fileSize i
 		quit <- struct{}{}
 	}()
 
+	completedNum := atomic.Int32{}
 	// consumers
 	for i := 0; i < options.ThreadsNum; i++ {
 		go func(threadId int) {
@@ -384,6 +397,8 @@ func (d *Pan115) UploadByMultipart(params *driver115.UploadOSSParams, fileSize i
 				var part oss.UploadPart // 出现错误就继续尝试，共尝试3次
 				for retry := 0; retry < 3; retry++ {
 					select {
+					case <-ctx.Done():
+						break
 					case <-ticker.C:
 						if ossToken, err = d.client.GetOSSToken(); err != nil { // 到时重新获取ossToken
 							errCh <- errors.Wrap(err, "刷新token时出现错误")
@@ -396,12 +411,18 @@ func (d *Pan115) UploadByMultipart(params *driver115.UploadOSSParams, fileSize i
 						continue
 					}
 
-					if part, err = bucket.UploadPart(imur, bytes.NewBuffer(buf), chunk.Size, chunk.Number, driver115.OssOption(params, ossToken)...); err == nil {
+					if part, err = bucket.UploadPart(imur, &stream.ReaderWithCtx{
+						Reader: bytes.NewBuffer(buf),
+						Ctx:    ctx,
+					}, chunk.Size, chunk.Number, driver115.OssOption(params, ossToken)...); err == nil {
 						break
 					}
 				}
 				if err != nil {
-					errCh <- errors.Wrap(err, fmt.Sprintf("上传 %s 的第%d个分片时出现错误：%v", stream.GetName(), chunk.Number, err))
+					errCh <- errors.Wrap(err, fmt.Sprintf("上传 %s 的第%d个分片时出现错误：%v", s.GetName(), chunk.Number, err))
+				} else {
+					num := completedNum.Add(1)
+					up(float64(num) * 100.0 / float64(len(chunks)))
 				}
 				UploadedPartsCh <- part
 			}

@@ -69,7 +69,7 @@ func (d *Pan123) completeS3(ctx context.Context, upReq *UploadResp, file model.F
 	return err
 }
 
-func (d *Pan123) newUpload(ctx context.Context, upReq *UploadResp, file model.FileStreamer, reader io.Reader, up driver.UpdateProgress) error {
+func (d *Pan123) newUpload(ctx context.Context, upReq *UploadResp, file model.FileStreamer, up driver.UpdateProgress) error {
 	chunkSize := int64(1024 * 1024 * 16)
 	// fetch s3 pre signed urls
 	chunkCount := int(math.Ceil(float64(file.GetSize()) / float64(chunkSize)))
@@ -103,7 +103,7 @@ func (d *Pan123) newUpload(ctx context.Context, upReq *UploadResp, file model.Fi
 			if j == chunkCount {
 				curSize = file.GetSize() - (int64(chunkCount)-1)*chunkSize
 			}
-			err = d.uploadS3Chunk(ctx, upReq, s3PreSignedUrls, j, end, io.LimitReader(reader, chunkSize), curSize, false, getS3UploadUrl)
+			err = d.uploadS3Chunk(ctx, upReq, s3PreSignedUrls, j, end, io.LimitReader(file, chunkSize), curSize, false, getS3UploadUrl)
 			if err != nil {
 				return err
 			}

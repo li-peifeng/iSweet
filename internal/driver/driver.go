@@ -77,7 +77,7 @@ type Remove interface {
 }
 
 type Put interface {
-	Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up UpdateProgress) error
+	Put(ctx context.Context, dstDir model.Obj, file model.FileStreamer, up UpdateProgress) error
 }
 
 type PutURL interface {
@@ -113,7 +113,7 @@ type CopyResult interface {
 }
 
 type PutResult interface {
-	Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up UpdateProgress) (model.Obj, error)
+	Put(ctx context.Context, dstDir model.Obj, file model.FileStreamer, up UpdateProgress) (model.Obj, error)
 }
 
 type PutURLResult interface {
@@ -159,7 +159,7 @@ type ArchiveDecompressResult interface {
 	ArchiveDecompress(ctx context.Context, srcObj, dstDir model.Obj, args model.ArchiveDecompressArgs) ([]model.Obj, error)
 }
 
-type UpdateProgress model.UpdateProgress
+type UpdateProgress = model.UpdateProgress
 
 type Progress struct {
 	Total int64
