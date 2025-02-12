@@ -79,16 +79,9 @@ func SuccessWithMsgResp(c *gin.Context, msg string, data ...interface{}) {
 
 	c.JSON(200, Resp[interface{}]{
 		Code:    200,
-		Message: "完成",
+		Message: msg,
 		Data:    respData,
 	})
-}
-
-func Pluralize(count int, singular, plural string) string {
-	if count == 1 {
-		return singular
-	}
-	return plural
 }
 
 func Pluralize(count int, singular, plural string) string {
