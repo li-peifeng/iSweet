@@ -3,7 +3,6 @@ package ipfs
 import (
 	"context"
 	"fmt"
-	"github.com/alist-org/alist/v3/internal/stream"
 	"net/url"
 	stdpath "path"
 	"path/filepath"
@@ -111,13 +110,10 @@ func (d *IPFS) Remove(ctx context.Context, obj model.Obj) error {
 
 func (d *IPFS) Put(ctx context.Context, dstDir model.Obj, s model.FileStreamer, up driver.UpdateProgress) error {
 	// TODO upload file, optional
-	_, err := d.sh.Add(&stream.ReaderWithCtx{
-		Reader: &stream.ReaderUpdatingProgress{
-			Reader:         s,
-			UpdateProgress: up,
-		},
-		Ctx: ctx,
-	}, ToFiles(stdpath.Join(dstDir.GetPath(), s.GetName())))
+	_, err := d.sh.Add(driver.NewLimitedUploadStream(ctx, &driver.ReaderUpdatingProgress{
+		Reader:         s,
+		UpdateProgress: up,
+	}), ToFiles(stdpath.Join(dstDir.GetPath(), s.GetName())))
 	return err
 }
 

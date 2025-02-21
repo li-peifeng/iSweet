@@ -35,7 +35,6 @@ func (*Zip) GetMeta(ss *stream.SeekableStream, args model.ArchiveArgs) (model.Ar
 	for _, file := range zipReader.File {
 		if file.IsEncrypted() {
 			encrypted = true
-			break
 		}
 
 		name := strings.TrimPrefix(decodeName(file.Name), "/")
@@ -70,6 +69,7 @@ func (*Zip) GetMeta(ss *stream.SeekableStream, args model.ArchiveArgs) (model.Ar
 			dirObj.IsFolder = true
 			dirObj.Name = stdpath.Base(dir)
 			dirObj.Modified = file.ModTime()
+			dirObj.Children = make([]model.ObjTree, 0)
 		}
 		if isNewFolder {
 			// 将 文件夹 添加到 父文件夹

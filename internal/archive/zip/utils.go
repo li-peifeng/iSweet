@@ -59,7 +59,7 @@ func _decompress(file *zip.File, targetPath, password string, up model.UpdatePro
 		return err
 	}
 	defer rc.Close()
-	f, err := os.OpenFile(stdpath.Join(targetPath, file.FileInfo().Name()), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+	f, err := os.OpenFile(stdpath.Join(targetPath, decodeName(file.FileInfo().Name())), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 	if err != nil {
 		return err
 	}
@@ -87,12 +87,27 @@ func filterPassword(err error) error {
 func decodeName(name string) string {
 	b := []byte(name)
 	detector := chardet.NewTextDetector()
-	result, err := detector.DetectBest(b)
+	results, err := detector.DetectAll(b)
 	if err != nil {
 		return name
 	}
-	enc := getEncoding(result.Charset)
-	if enc == nil {
+	var ce, re, enc encoding.Encoding
+	for _, r := range results {
+		if r.Confidence > 30 {
+			ce = getCommonEncoding(r.Charset)
+			if ce != nil {
+				break
+			}
+		}
+		if re == nil {
+			re = getEncoding(r.Charset)
+		}
+	}
+	if ce != nil {
+		enc = ce
+	} else if re != nil {
+		enc = re
+	} else {
 		return name
 	}
 	i := bytes.NewReader(b)
@@ -101,8 +116,30 @@ func decodeName(name string) string {
 	return string(content)
 }
 
+func getCommonEncoding(name string) (enc encoding.Encoding) {
+	switch name {
+	case "UTF-8":
+		enc = unicode.UTF8
+	case "UTF-16LE":
+		enc = unicode.UTF16(unicode.LittleEndian, unicode.IgnoreBOM)
+	case "Shift_JIS":
+		enc = japanese.ShiftJIS
+	case "GB-18030":
+		enc = simplifiedchinese.GB18030
+	case "EUC-KR":
+		enc = korean.EUCKR
+	case "Big5":
+		enc = traditionalchinese.Big5
+	default:
+		enc = nil
+	}
+	return
+}
+
 func getEncoding(name string) (enc encoding.Encoding) {
 	switch name {
+	case "UTF-8":
+		enc = unicode.UTF8
 	case "UTF-16BE":
 		enc = unicode.UTF16(unicode.BigEndian, unicode.IgnoreBOM)
 	case "UTF-16LE":

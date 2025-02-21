@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/alist-org/alist/v3/internal/stream"
 	"io"
 	"net/http"
 	"net/url"
@@ -59,7 +58,7 @@ func (d *Trainbit) List(ctx context.Context, dir model.Obj, args model.ListArgs)
 		return nil, err
 	}
 	var jsonData any
-	json.Unmarshal(data, &jsonData)
+	err = json.Unmarshal(data, &jsonData)
 	if err != nil {
 		return nil, err
 	}
@@ -122,10 +121,10 @@ func (d *Trainbit) Put(ctx context.Context, dstDir model.Obj, s model.FileStream
 	query.Add("guid", guid)
 	query.Add("name", url.QueryEscape(local2provider(s.GetName(), false)+"."))
 	endpoint.RawQuery = query.Encode()
-	progressReader := &stream.ReaderUpdatingProgress{
+	progressReader := driver.NewLimitedUploadStream(ctx, &driver.ReaderUpdatingProgress{
 		Reader:         s,
 		UpdateProgress: up,
-	}
+	})
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint.String(), progressReader)
 	if err != nil {
 		return err

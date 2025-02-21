@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"time"
 
+	"golang.org/x/sync/semaphore"
+
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/errs"
@@ -263,8 +265,12 @@ func (d *BaiduNetdisk) Put(ctx context.Context, dstDir model.Obj, stream model.F
 		retry.Attempts(3),
 		retry.Delay(time.Second),
 		retry.DelayType(retry.BackOffDelay))
+	sem := semaphore.NewWeighted(3)
 	for i, partseq := range precreateResp.BlockList {
 		if utils.IsCanceled(upCtx) {
+			break
+		}
+		if err = sem.Acquire(ctx, 1); err != nil {
 			break
 		}
 
@@ -273,6 +279,7 @@ func (d *BaiduNetdisk) Put(ctx context.Context, dstDir model.Obj, stream model.F
 			byteSize = lastBlockSize
 		}
 		threadG.Go(func(ctx context.Context) error {
+			defer sem.Release(1)
 			params := map[string]string{
 				"method":       "upload",
 				"access_token": d.AccessToken,
@@ -281,7 +288,8 @@ func (d *BaiduNetdisk) Put(ctx context.Context, dstDir model.Obj, stream model.F
 				"uploadid":     precreateResp.Uploadid,
 				"partseq":      strconv.Itoa(partseq),
 			}
-			err := d.uploadSlice(ctx, params, stream.GetName(), io.NewSectionReader(tempFile, offset, byteSize))
+			err := d.uploadSlice(ctx, params, stream.GetName(),
+				driver.NewLimitedUploadStream(ctx, io.NewSectionReader(tempFile, offset, byteSize)))
 			if err != nil {
 				return err
 			}

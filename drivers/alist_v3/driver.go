@@ -3,7 +3,6 @@ package alist_v3
 import (
 	"context"
 	"fmt"
-	"github.com/alist-org/alist/v3/internal/stream"
 	"io"
 	"net/http"
 	"path"
@@ -183,10 +182,11 @@ func (d *AListV3) Remove(ctx context.Context, obj model.Obj) error {
 }
 
 func (d *AListV3) Put(ctx context.Context, dstDir model.Obj, s model.FileStreamer, up driver.UpdateProgress) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, d.Address+"/api/fs/put", &stream.ReaderUpdatingProgress{
+	reader := driver.NewLimitedUploadStream(ctx, &driver.ReaderUpdatingProgress{
 		Reader:         s,
 		UpdateProgress: up,
 	})
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, d.Address+"/api/fs/put", reader)
 	if err != nil {
 		return err
 	}

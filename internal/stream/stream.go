@@ -182,14 +182,24 @@ func NewSeekableStream(fs FileStream, link *model.Link) (*SeekableStream, error)
 	}
 	if ss.Link != nil {
 		if ss.Link.MFile != nil {
-			ss.mFile = ss.Link.MFile
-			ss.Reader = ss.Link.MFile
-			ss.Closers.Add(ss.Link.MFile)
+			mFile := ss.Link.MFile
+			if _, ok := mFile.(*os.File); !ok {
+				mFile = &RateLimitFile{
+					File:    mFile,
+					Limiter: ServerDownloadLimit,
+					Ctx:     fs.Ctx,
+				}
+			}
+			ss.mFile = mFile
+			ss.Reader = mFile
+			ss.Closers.Add(mFile)
 			return &ss, nil
 		}
-
 		if ss.Link.RangeReadCloser != nil {
-			ss.rangeReadCloser = ss.Link.RangeReadCloser
+			ss.rangeReadCloser = RateLimitRangeReadCloser{
+				RangeReadCloserIF: ss.Link.RangeReadCloser,
+				Limiter:           ServerDownloadLimit,
+			}
 			ss.Add(ss.rangeReadCloser)
 			return &ss, nil
 		}
@@ -197,6 +207,10 @@ func NewSeekableStream(fs FileStream, link *model.Link) (*SeekableStream, error)
 			rrc, err := GetRangeReadCloserFromLink(ss.GetSize(), link)
 			if err != nil {
 				return nil, err
+			}
+			rrc = RateLimitRangeReadCloser{
+				RangeReadCloserIF: rrc,
+				Limiter:           ServerDownloadLimit,
 			}
 			ss.rangeReadCloser = rrc
 			ss.Add(rrc)
@@ -259,7 +273,7 @@ func (ss *SeekableStream) CacheFullInTempFile() (model.File, error) {
 	if ss.tmpFile != nil {
 		return ss.tmpFile, nil
 	}
-	if ss.mFile != nil {
+	if _, ok := ss.mFile.(*os.File); ok {
 		return ss.mFile, nil
 	}
 	tmpF, err := utils.CreateTempFile(ss, ss.GetSize())
@@ -276,7 +290,7 @@ func (ss *SeekableStream) CacheFullInTempFileAndUpdateProgress(up model.UpdatePr
 	if ss.tmpFile != nil {
 		return ss.tmpFile, nil
 	}
-	if ss.mFile != nil {
+	if _, ok := ss.mFile.(*os.File); ok {
 		return ss.mFile, nil
 	}
 	tmpF, err := utils.CreateTempFile(&ReaderUpdatingProgress{
@@ -293,12 +307,13 @@ func (ss *SeekableStream) CacheFullInTempFileAndUpdateProgress(up model.UpdatePr
 }
 
 func (f *FileStream) SetTmpFile(r *os.File) {
-	f.Reader = r
+	f.Add(r)
 	f.tmpFile = r
+	f.Reader = r
 }
 
 type ReaderWithSize interface {
-	io.Reader
+	io.ReadCloser
 	GetSize() int64
 }
 
@@ -309,6 +324,13 @@ type SimpleReaderWithSize struct {
 
 func (r *SimpleReaderWithSize) GetSize() int64 {
 	return r.Size
+}
+
+func (r *SimpleReaderWithSize) Close() error {
+	if c, ok := r.Reader.(io.Closer); ok {
+		return c.Close()
+	}
+	return nil
 }
 
 type ReaderUpdatingProgress struct {
@@ -322,6 +344,10 @@ func (r *ReaderUpdatingProgress) Read(p []byte) (n int, err error) {
 	r.offset += n
 	r.UpdateProgress(math.Min(100.0, float64(r.offset)/float64(r.Reader.GetSize())*100.0))
 	return n, err
+}
+
+func (r *ReaderUpdatingProgress) Close() error {
+	return r.Reader.Close()
 }
 
 type SStreamReadAtSeeker interface {
@@ -534,7 +560,7 @@ func (r *RangeReadReadAtSeeker) Read(p []byte) (n int, err error) {
 
 func (r *RangeReadReadAtSeeker) Close() error {
 	if r.headCache != nil {
-		r.headCache.close()
+		_ = r.headCache.close()
 	}
 	return r.ss.Close()
 }
@@ -561,18 +587,4 @@ func (f *FileReadAtSeeker) Seek(offset int64, whence int) (int64, error) {
 
 func (f *FileReadAtSeeker) Close() error {
 	return f.ss.Close()
-}
-
-type ReaderWithCtx struct {
-	io.Reader
-	Ctx context.Context
-}
-
-func (r *ReaderWithCtx) Read(p []byte) (n int, err error) {
-	select {
-	case <-r.Ctx.Done():
-		return 0, r.Ctx.Err()
-	default:
-		return r.Reader.Read(p)
-	}
 }

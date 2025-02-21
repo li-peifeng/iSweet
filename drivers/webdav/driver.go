@@ -2,7 +2,6 @@ package webdav
 
 import (
 	"context"
-	"github.com/alist-org/alist/v3/internal/stream"
 	"net/http"
 	"os"
 	"path"
@@ -99,13 +98,11 @@ func (d *WebDav) Put(ctx context.Context, dstDir model.Obj, s model.FileStreamer
 		r.Header.Set("Content-Type", s.GetMimetype())
 		r.ContentLength = s.GetSize()
 	}
-	err := d.client.WriteStream(path.Join(dstDir.GetPath(), s.GetName()), &stream.ReaderWithCtx{
-		Reader: &stream.ReaderUpdatingProgress{
-			Reader:         s,
-			UpdateProgress: up,
-		},
-		Ctx: ctx,
-	}, 0644, callback)
+	reader := driver.NewLimitedUploadStream(ctx, &driver.ReaderUpdatingProgress{
+		Reader:         s,
+		UpdateProgress: up,
+	})
+	err := d.client.WriteStream(path.Join(dstDir.GetPath(), s.GetName()), reader, 0644, callback)
 	return err
 }
 

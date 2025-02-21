@@ -126,13 +126,10 @@ func (d *USS) Remove(ctx context.Context, obj model.Obj) error {
 func (d *USS) Put(ctx context.Context, dstDir model.Obj, s model.FileStreamer, up driver.UpdateProgress) error {
 	return d.client.Put(&upyun.PutObjectConfig{
 		Path: getKey(path.Join(dstDir.GetPath(), s.GetName()), false),
-		Reader: &stream.ReaderWithCtx{
-			Reader: &stream.ReaderUpdatingProgress{
-				Reader:         s,
-				UpdateProgress: up,
-			},
-			Ctx: ctx,
-		},
+		Reader: driver.NewLimitedUploadStream(ctx, &stream.ReaderUpdatingProgress{
+			Reader:         s,
+			UpdateProgress: up,
+		}),
 	})
 }
 

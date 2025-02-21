@@ -3,6 +3,7 @@ package stream
 import (
 	"context"
 	"fmt"
+	"github.com/alist-org/alist/v3/pkg/utils"
 	"io"
 	"net/http"
 
@@ -75,4 +76,23 @@ func checkContentRange(header *http.Header, offset int64) bool {
 		return true
 	}
 	return false
+}
+
+type ReaderWithCtx struct {
+	io.Reader
+	Ctx context.Context
+}
+
+func (r *ReaderWithCtx) Read(p []byte) (n int, err error) {
+	if utils.IsCanceled(r.Ctx) {
+		return 0, r.Ctx.Err()
+	}
+	return r.Reader.Read(p)
+}
+
+func (r *ReaderWithCtx) Close() error {
+	if c, ok := r.Reader.(io.Closer); ok {
+		return c.Close()
+	}
+	return nil
 }

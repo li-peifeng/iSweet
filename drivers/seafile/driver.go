@@ -3,7 +3,6 @@ package seafile
 import (
 	"context"
 	"fmt"
-	"github.com/alist-org/alist/v3/internal/stream"
 	"net/http"
 	"strings"
 	"time"
@@ -215,10 +214,10 @@ func (d *Seafile) Put(ctx context.Context, dstDir model.Obj, s model.FileStreame
 	u := string(res)
 	u = u[1 : len(u)-1] // remove quotes
 	_, err = d.request(http.MethodPost, u, func(req *resty.Request) {
-		r := &stream.ReaderUpdatingProgress{
+		r := driver.NewLimitedUploadStream(ctx, &driver.ReaderUpdatingProgress{
 			Reader:         s,
 			UpdateProgress: up,
-		}
+		})
 		req.SetFileReader("file", s.GetName(), r).
 			SetFormData(map[string]string{
 				"parent_dir": path,

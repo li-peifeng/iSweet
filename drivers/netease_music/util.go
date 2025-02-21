@@ -2,8 +2,6 @@ package netease_music
 
 import (
 	"context"
-	"github.com/alist-org/alist/v3/internal/driver"
-	"github.com/alist-org/alist/v3/internal/stream"
 	"net/http"
 	"path"
 	"regexp"
@@ -12,6 +10,7 @@ import (
 	"time"
 
 	"github.com/alist-org/alist/v3/drivers/base"
+	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/pkg/utils"
@@ -69,13 +68,10 @@ func (d *NeteaseMusic) request(url, method string, opt ReqOption) ([]byte, error
 				opt.up = func(_ float64) {}
 			}
 			req.SetContentLength(true)
-			req.SetBody(&InlineReadCloser{
-				Reader: &stream.ReaderUpdatingProgress{
-					Reader:         opt.stream,
-					UpdateProgress: opt.up,
-				},
-				Closer: opt.stream,
-			})
+			req.SetBody(driver.NewLimitedUploadStream(opt.ctx, &driver.ReaderUpdatingProgress{
+				Reader:         opt.stream,
+				UpdateProgress: opt.up,
+			}))
 		} else {
 			req.SetFormData(data)
 		}

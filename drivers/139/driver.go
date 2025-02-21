@@ -631,12 +631,13 @@ func (d *Yun139) Put(ctx context.Context, dstDir model.Obj, stream model.FileStr
 			// Progress
 			p := driver.NewProgress(stream.GetSize(), up)
 
+			rateLimited := driver.NewLimitedUploadStream(ctx, stream)
 			// 上传所有分片
 			for _, uploadPartInfo := range uploadPartInfos {
 				index := uploadPartInfo.PartNumber - 1
 				partSize := partInfos[index].PartSize
 				log.Debugf("[139] uploading part %+v/%+v", index, len(uploadPartInfos))
-				limitReader := io.LimitReader(stream, partSize)
+				limitReader := io.LimitReader(rateLimited, partSize)
 
 				// Update Progress
 				r := io.TeeReader(limitReader, p)
@@ -787,6 +788,7 @@ func (d *Yun139) Put(ctx context.Context, dstDir model.Obj, stream model.FileStr
 		if part == 0 {
 			part = 1
 		}
+		rateLimited := driver.NewLimitedUploadStream(ctx, stream)
 		for i := int64(0); i < part; i++ {
 			if utils.IsCanceled(ctx) {
 				return ctx.Err()
@@ -798,7 +800,7 @@ func (d *Yun139) Put(ctx context.Context, dstDir model.Obj, stream model.FileStr
 				byteSize = partSize
 			}
 
-			limitReader := io.LimitReader(stream, byteSize)
+			limitReader := io.LimitReader(rateLimited, byteSize)
 			// Update Progress
 			r := io.TeeReader(limitReader, p)
 			req, err := http.NewRequest("POST", resp.Data.UploadResult.RedirectionURL, r)

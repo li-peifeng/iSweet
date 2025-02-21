@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/alist-org/alist/v3/internal/stream"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -249,13 +248,13 @@ func (d *ChaoXing) Put(ctx context.Context, dstDir model.Obj, file model.FileStr
 	if err != nil {
 		return err
 	}
-	r := &stream.ReaderUpdatingProgress{
-		Reader: &stream.SimpleReaderWithSize{
+	r := driver.NewLimitedUploadStream(ctx, &driver.ReaderUpdatingProgress{
+		Reader: &driver.SimpleReaderWithSize{
 			Reader: body,
 			Size:   int64(body.Len()),
 		},
 		UpdateProgress: up,
-	}
+	})
 	req, err := http.NewRequestWithContext(ctx, "POST", "https://pan-yz.chaoxing.com/upload", r)
 	if err != nil {
 		return err

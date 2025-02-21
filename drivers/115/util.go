@@ -8,8 +8,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/alist-org/alist/v3/internal/driver"
-	"github.com/alist-org/alist/v3/internal/stream"
 	"io"
 	"net/http"
 	"net/url"
@@ -20,6 +18,7 @@ import (
 	"time"
 
 	"github.com/alist-org/alist/v3/internal/conf"
+	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/pkg/http_range"
 	"github.com/alist-org/alist/v3/pkg/utils"
@@ -144,7 +143,7 @@ func (d *Pan115) DownloadWithUA(pickCode, ua string) (*driver115.DownloadInfo, e
 		return nil, err
 	}
 
-	bytes, err := crypto.Decode(string(result.EncodedData), key)
+	b, err := crypto.Decode(string(result.EncodedData), key)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +151,7 @@ func (d *Pan115) DownloadWithUA(pickCode, ua string) (*driver115.DownloadInfo, e
 	downloadInfo := struct {
 		Url string `json:"url"`
 	}{}
-	if err := utils.Json.Unmarshal(bytes, &downloadInfo); err != nil {
+	if err := utils.Json.Unmarshal(b, &downloadInfo); err != nil {
 		return nil, err
 	}
 
@@ -290,13 +289,10 @@ func (c *Pan115) UploadByOSS(ctx context.Context, params *driver115.UploadOSSPar
 	}
 
 	var bodyBytes []byte
-	r := &stream.ReaderWithCtx{
-		Reader: &stream.ReaderUpdatingProgress{
-			Reader:         s,
-			UpdateProgress: up,
-		},
-		Ctx: ctx,
-	}
+	r := driver.NewLimitedUploadStream(ctx, &driver.ReaderUpdatingProgress{
+		Reader:         s,
+		UpdateProgress: up,
+	})
 	if err = bucket.PutObject(params.Object, r, append(
 		driver115.OssOption(params, ossToken),
 		oss.CallbackResult(&bodyBytes),
@@ -405,16 +401,12 @@ func (d *Pan115) UploadByMultipart(ctx context.Context, params *driver115.Upload
 						}
 					default:
 					}
-
 					buf := make([]byte, chunk.Size)
 					if _, err = tmpF.ReadAt(buf, chunk.Offset); err != nil && !errors.Is(err, io.EOF) {
 						continue
 					}
-
-					if part, err = bucket.UploadPart(imur, &stream.ReaderWithCtx{
-						Reader: bytes.NewBuffer(buf),
-						Ctx:    ctx,
-					}, chunk.Size, chunk.Number, driver115.OssOption(params, ossToken)...); err == nil {
+					if part, err = bucket.UploadPart(imur, driver.NewLimitedUploadStream(ctx, bytes.NewBuffer(buf)),
+						chunk.Size, chunk.Number, driver115.OssOption(params, ossToken)...); err == nil {
 						break
 					}
 				}

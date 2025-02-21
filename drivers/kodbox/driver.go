@@ -3,9 +3,6 @@ package kodbox
 import (
 	"context"
 	"fmt"
-	"github.com/alist-org/alist/v3/internal/stream"
-	"github.com/alist-org/alist/v3/pkg/utils"
-	"github.com/go-resty/resty/v2"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -13,6 +10,8 @@ import (
 
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/pkg/utils"
+	"github.com/go-resty/resty/v2"
 )
 
 type KodBox struct {
@@ -229,10 +228,10 @@ func (d *KodBox) Remove(ctx context.Context, obj model.Obj) error {
 func (d *KodBox) Put(ctx context.Context, dstDir model.Obj, s model.FileStreamer, up driver.UpdateProgress) (model.Obj, error) {
 	var resp *CommonResp
 	_, err := d.request(http.MethodPost, "/?explorer/upload/fileUpload", func(req *resty.Request) {
-		r := &stream.ReaderUpdatingProgress{
+		r := driver.NewLimitedUploadStream(ctx, &driver.ReaderUpdatingProgress{
 			Reader:         s,
 			UpdateProgress: up,
-		}
+		})
 		req.SetFileReader("file", s.GetName(), r).
 			SetResult(&resp).
 			SetFormData(map[string]string{

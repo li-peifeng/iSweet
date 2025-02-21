@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/net"
@@ -23,11 +24,22 @@ func Proxy(w http.ResponseWriter, r *http.Request, link *model.Link, file model.
 		if contentType != "" {
 			w.Header().Set("Content-Type", contentType)
 		}
-		http.ServeContent(w, r, file.GetName(), file.ModTime(), link.MFile)
+		mFile := link.MFile
+		if _, ok := mFile.(*os.File); !ok {
+			mFile = &stream.RateLimitFile{
+				File:    mFile,
+				Limiter: stream.ServerDownloadLimit,
+				Ctx:     r.Context(),
+			}
+		}
+		http.ServeContent(w, r, file.GetName(), file.ModTime(), mFile)
 		return nil
 	} else if link.RangeReadCloser != nil {
 		attachFileName(w, file)
-		net.ServeHTTP(w, r, file.GetName(), file.ModTime(), file.GetSize(), link.RangeReadCloser)
+		net.ServeHTTP(w, r, file.GetName(), file.ModTime(), file.GetSize(), &stream.RateLimitRangeReadCloser{
+			RangeReadCloserIF: link.RangeReadCloser,
+			Limiter:           stream.ServerDownloadLimit,
+		})
 		return nil
 	} else if link.Concurrency != 0 || link.PartSize != 0 {
 		attachFileName(w, file)
@@ -47,7 +59,10 @@ func Proxy(w http.ResponseWriter, r *http.Request, link *model.Link, file model.
 			rc, err := down.Download(ctx, req)
 			return rc, err
 		}
-		net.ServeHTTP(w, r, file.GetName(), file.ModTime(), file.GetSize(), &model.RangeReadCloser{RangeReader: rangeReader})
+		net.ServeHTTP(w, r, file.GetName(), file.ModTime(), file.GetSize(), &stream.RateLimitRangeReadCloser{
+			RangeReadCloserIF: &model.RangeReadCloser{RangeReader: rangeReader},
+			Limiter:           stream.ServerDownloadLimit,
+		})
 		return nil
 	} else {
 		//transparent proxy
@@ -65,7 +80,11 @@ func Proxy(w http.ResponseWriter, r *http.Request, link *model.Link, file model.
 		if r.Method == http.MethodHead {
 			return nil
 		}
-		_, err = utils.CopyWithBuffer(w, res.Body)
+		_, err = utils.CopyWithBuffer(w, &stream.RateLimitReader{
+			Reader:  res.Body,
+			Limiter: stream.ServerDownloadLimit,
+			Ctx:     r.Context(),
+		})
 		if err != nil {
 			return err
 		}

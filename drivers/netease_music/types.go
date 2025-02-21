@@ -116,16 +116,3 @@ func (ch *Characteristic) merge(data map[string]string) map[string]interface{} {
 	}
 	return body
 }
-
-type InlineReadCloser struct {
-	io.Reader
-	io.Closer
-}
-
-func (rc *InlineReadCloser) Read(p []byte) (int, error) {
-	return rc.Reader.Read(p)
-}
-
-func (rc *InlineReadCloser) Close() error {
-	return rc.Closer.Close()
-}

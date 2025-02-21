@@ -76,6 +76,10 @@ func (d *ILanZou) request(pathname, method string, callback base.ReqCallback, pr
 		"Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,mt;q=0.5",
 	})
 
+	if d.Addition.Ip != "" {
+		req.SetHeader("X-Forwarded-For", d.Addition.Ip)
+	}
+
 	if callback != nil {
 		callback(req)
 	}

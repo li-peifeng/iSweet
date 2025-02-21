@@ -2,7 +2,6 @@ package ftp
 
 import (
 	"context"
-	"github.com/alist-org/alist/v3/internal/stream"
 	stdpath "path"
 
 	"github.com/alist-org/alist/v3/internal/driver"
@@ -120,13 +119,10 @@ func (d *FTP) Put(ctx context.Context, dstDir model.Obj, s model.FileStreamer, u
 		return err
 	}
 	path := stdpath.Join(dstDir.GetPath(), s.GetName())
-	return d.conn.Stor(encode(path, d.Encoding), &stream.ReaderWithCtx{
-		Reader: &stream.ReaderUpdatingProgress{
-			Reader:         s,
-			UpdateProgress: up,
-		},
-		Ctx: ctx,
-	})
+	return d.conn.Stor(encode(path, d.Encoding), driver.NewLimitedUploadStream(ctx, &driver.ReaderUpdatingProgress{
+		Reader:         s,
+		UpdateProgress: up,
+	}))
 }
 
 var _ driver.Driver = (*FTP)(nil)

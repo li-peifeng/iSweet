@@ -100,7 +100,7 @@ func (d *Cloudreve) login() error {
 		if err == nil {
 			break
 		}
-		if err != nil && err.Error() != "CAPTCHA not match." {
+		if err.Error() != "CAPTCHA not match." {
 			break
 		}
 	}
@@ -202,7 +202,8 @@ func (d *Cloudreve) upRemote(ctx context.Context, stream model.FileStreamer, u U
 		if err != nil {
 			return err
 		}
-		req, err := http.NewRequest("POST", uploadUrl+"?chunk="+strconv.Itoa(chunk), bytes.NewBuffer(byteData))
+		req, err := http.NewRequest("POST", uploadUrl+"?chunk="+strconv.Itoa(chunk),
+			driver.NewLimitedUploadStream(ctx, bytes.NewBuffer(byteData)))
 		if err != nil {
 			return err
 		}
@@ -214,7 +215,7 @@ func (d *Cloudreve) upRemote(ctx context.Context, stream model.FileStreamer, u U
 		if err != nil {
 			return err
 		}
-		res.Body.Close()
+		_ = res.Body.Close()
 		up(float64(finish) * 100 / float64(stream.GetSize()))
 		chunk++
 	}
@@ -241,7 +242,7 @@ func (d *Cloudreve) upOneDrive(ctx context.Context, stream model.FileStreamer, u
 		if err != nil {
 			return err
 		}
-		req, err := http.NewRequest("PUT", uploadUrl, bytes.NewBuffer(byteData))
+		req, err := http.NewRequest("PUT", uploadUrl, driver.NewLimitedUploadStream(ctx, bytes.NewBuffer(byteData)))
 		if err != nil {
 			return err
 		}
@@ -256,10 +257,10 @@ func (d *Cloudreve) upOneDrive(ctx context.Context, stream model.FileStreamer, u
 		// https://learn.microsoft.com/zh-cn/onedrive/developer/rest-api/api/driveitem_createuploadsession
 		if res.StatusCode != 201 && res.StatusCode != 202 && res.StatusCode != 200 {
 			data, _ := io.ReadAll(res.Body)
-			res.Body.Close()
+			_ = res.Body.Close()
 			return errors.New(string(data))
 		}
-		res.Body.Close()
+		_ = res.Body.Close()
 		up(float64(finish) * 100 / float64(stream.GetSize()))
 	}
 	// 上传成功发送回调请求

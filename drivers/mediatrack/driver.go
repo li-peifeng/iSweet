@@ -5,7 +5,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	"github.com/alist-org/alist/v3/internal/stream"
 	"io"
 	"net/http"
 	"strconv"
@@ -195,13 +194,13 @@ func (d *MediaTrack) Put(ctx context.Context, dstDir model.Obj, file model.FileS
 	input := &s3manager.UploadInput{
 		Bucket: &resp.Data.Bucket,
 		Key:    &resp.Data.Object,
-		Body: &stream.ReaderUpdatingProgress{
-			Reader: &stream.SimpleReaderWithSize{
+		Body: driver.NewLimitedUploadStream(ctx, &driver.ReaderUpdatingProgress{
+			Reader: &driver.SimpleReaderWithSize{
 				Reader: tempFile,
 				Size:   file.GetSize(),
 			},
 			UpdateProgress: up,
-		},
+		}),
 	}
 	_, err = uploader.UploadWithContext(ctx, input)
 	if err != nil {

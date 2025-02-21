@@ -4,6 +4,7 @@ import (
 	"github.com/alist-org/alist/v3/cmd/flags"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/message"
+	"github.com/alist-org/alist/v3/internal/stream"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/alist-org/alist/v3/server/common"
 	"github.com/alist-org/alist/v3/server/handles"
@@ -38,13 +39,14 @@ func Init(e *gin.Engine) {
 	WebDav(g.Group("/dav"))
 	S3(g.Group("/s3"))
 
-	g.GET("/d/*path", middlewares.Down, handles.Down)
-	g.GET("/p/*path", middlewares.Down, handles.Proxy)
+	downloadLimiter := middlewares.DownloadRateLimiter(stream.ClientDownloadLimit)
+	g.GET("/d/*path", middlewares.Down, downloadLimiter, handles.Down)
+	g.GET("/p/*path", middlewares.Down, downloadLimiter, handles.Proxy)
 	g.HEAD("/d/*path", middlewares.Down, handles.Down)
 	g.HEAD("/p/*path", middlewares.Down, handles.Proxy)
-	g.GET("/ad/*path", middlewares.Down, handles.ArchiveDown)
-	g.GET("/ap/*path", middlewares.Down, handles.ArchiveProxy)
-	g.GET("/ae/*path", middlewares.Down, handles.ArchiveInternalExtract)
+	g.GET("/ad/*path", middlewares.Down, downloadLimiter, handles.ArchiveDown)
+	g.GET("/ap/*path", middlewares.Down, downloadLimiter, handles.ArchiveProxy)
+	g.GET("/ae/*path", middlewares.Down, downloadLimiter, handles.ArchiveInternalExtract)
 	g.HEAD("/ad/*path", middlewares.Down, handles.ArchiveDown)
 	g.HEAD("/ap/*path", middlewares.Down, handles.ArchiveProxy)
 	g.HEAD("/ae/*path", middlewares.Down, handles.ArchiveInternalExtract)
@@ -173,8 +175,9 @@ func _fs(g *gin.RouterGroup) {
 	g.POST("/copy", handles.FsCopy)
 	g.POST("/remove", handles.FsRemove)
 	g.POST("/remove_empty_directory", handles.FsRemoveEmptyDirectory)
-	g.PUT("/put", middlewares.FsUp, handles.FsStream)
-	g.PUT("/form", middlewares.FsUp, handles.FsForm)
+	uploadLimiter := middlewares.UploadRateLimiter(stream.ClientUploadLimit)
+	g.PUT("/put", middlewares.FsUp, uploadLimiter, handles.FsStream)
+	g.PUT("/form", middlewares.FsUp, uploadLimiter, handles.FsForm)
 	g.POST("/link", middlewares.AuthAdmin, handles.Link)
 	// g.POST("/add_aria2", handles.AddOfflineDownload)
 	// g.POST("/add_qbit", handles.AddQbittorrent)

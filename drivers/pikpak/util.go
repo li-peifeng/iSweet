@@ -10,7 +10,6 @@ import (
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
-	"github.com/alist-org/alist/v3/internal/stream"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	jsoniter "github.com/json-iterator/go"
@@ -430,13 +429,10 @@ func (d *PikPak) UploadByOSS(ctx context.Context, params *S3Params, s model.File
 		return err
 	}
 
-	err = bucket.PutObject(params.Key, &stream.ReaderWithCtx{
-		Reader: &stream.ReaderUpdatingProgress{
-			Reader:         s,
-			UpdateProgress: up,
-		},
-		Ctx: ctx,
-	}, OssOption(params)...)
+	err = bucket.PutObject(params.Key, driver.NewLimitedUploadStream(ctx, &driver.ReaderUpdatingProgress{
+		Reader:         s,
+		UpdateProgress: up,
+	}), OssOption(params)...)
 	if err != nil {
 		return err
 	}
@@ -522,11 +518,8 @@ func (d *PikPak) UploadByMultipart(ctx context.Context, params *S3Params, fileSi
 						continue
 					}
 
-					b := bytes.NewBuffer(buf)
-					if part, err = bucket.UploadPart(imur, &stream.ReaderWithCtx{
-						Reader: b,
-						Ctx:    ctx,
-					}, chunk.Size, chunk.Number, OssOption(params)...); err == nil {
+					b := driver.NewLimitedUploadStream(ctx, bytes.NewBuffer(buf))
+					if part, err = bucket.UploadPart(imur, b, chunk.Size, chunk.Number, OssOption(params)...); err == nil {
 						break
 					}
 				}

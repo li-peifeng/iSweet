@@ -70,7 +70,7 @@ func (d *WeiYun) Init(ctx context.Context) error {
 	if d.client.LoginType() == 1 {
 		d.cron = cron.NewCron(time.Minute * 5)
 		d.cron.Do(func() {
-			d.client.KeepAlive()
+			_ = d.client.KeepAlive()
 		})
 	}
 
@@ -364,12 +364,13 @@ func (d *WeiYun) Put(ctx context.Context, dstDir model.Obj, stream model.FileStr
 			threadG.Go(func(ctx context.Context) error {
 				for {
 					channel.Len = int(math.Min(float64(stream.GetSize()-channel.Offset), float64(channel.Len)))
+					len64 := int64(channel.Len)
 					upData, err := d.client.UploadFile(upCtx, channel, preData.UploadAuthData,
-						io.NewSectionReader(file, channel.Offset, int64(channel.Len)))
+						driver.NewLimitedUploadStream(ctx, io.NewSectionReader(file, channel.Offset, len64)))
 					if err != nil {
 						return err
 					}
-					cur := total.Add(int64(channel.Len))
+					cur := total.Add(len64)
 					up(float64(cur) * 100.0 / float64(stream.GetSize()))
 					// 上传完成
 					if upData.UploadState != 1 {

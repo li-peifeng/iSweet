@@ -16,7 +16,6 @@ import (
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/internal/model"
-	"github.com/alist-org/alist/v3/internal/stream"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/go-resty/resty/v2"
 	log "github.com/sirupsen/logrus"
@@ -85,10 +84,13 @@ func (d *Github) Init(ctx context.Context) error {
 	}
 	d.client = base.NewRestyClient().
 		SetHeader("Accept", "application/vnd.github.object+json").
-		SetHeader("Authorization", "Bearer "+d.Token).
 		SetHeader("X-GitHub-Api-Version", "2022-11-28").
 		SetLogger(log.StandardLogger()).
 		SetDebug(false)
+	token := strings.TrimSpace(d.Token)
+	if token != "" {
+		d.client = d.client.SetHeader("Authorization", "Bearer "+token)
+	}
 	if d.Ref == "" {
 		repo, err := d.getRepo()
 		if err != nil {
@@ -149,8 +151,13 @@ func (d *Github) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 	if obj.Type == "submodule" {
 		return nil, errors.New("cannot download a submodule")
 	}
+	url := obj.DownloadURL
+	ghProxy := strings.TrimSpace(d.Addition.GitHubProxy)
+	if ghProxy != "" {
+		url = strings.Replace(url, "https://raw.githubusercontent.com", ghProxy, 1)
+	}
 	return &model.Link{
-		URL: obj.DownloadURL,
+		URL: url,
 	}, nil
 }
 
@@ -668,25 +675,29 @@ func (d *Github) putBlob(ctx context.Context, s model.FileStreamer, up driver.Up
 	afterContentReader := strings.NewReader(afterContent)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		fmt.Sprintf("https://api.github.com/repos/%s/%s/git/blobs", d.Owner, d.Repo),
-		&stream.ReaderUpdatingProgress{
-			Reader: &stream.SimpleReaderWithSize{
+		driver.NewLimitedUploadStream(ctx, &driver.ReaderUpdatingProgress{
+			Reader: &driver.SimpleReaderWithSize{
 				Reader: io.MultiReader(beforeContentReader, contentReader, afterContentReader),
 				Size:   length,
 			},
 			UpdateProgress: up,
-		})
+		}))
 	if err != nil {
 		return "", err
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("Authorization", "Bearer "+d.Token)
 	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+	token := strings.TrimSpace(d.Token)
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
 	req.ContentLength = length
 
 	res, err := base.HttpClient.Do(req)
 	if err != nil {
 		return "", err
 	}
+	defer res.Body.Close()
 	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		return "", err

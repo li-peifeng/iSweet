@@ -39,7 +39,7 @@ type ArchiveMetaResp struct {
 
 type ArchiveContentResp struct {
 	ObjResp
-	Children []ArchiveContentResp `json:"children,omitempty"`
+	Children []ArchiveContentResp `json:"children"`
 }
 
 func toObjsRespWithoutSignAndThumb(obj model.Obj) ObjResp {

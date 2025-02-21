@@ -3,6 +3,7 @@ package net
 import (
 	"compress/gzip"
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"mime"
@@ -14,7 +15,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/pkg/http_range"
@@ -264,7 +264,7 @@ var httpClient *http.Client
 
 func HttpClient() *http.Client {
 	once.Do(func() {
-		httpClient = base.NewHttpClient()
+		httpClient = NewHttpClient()
 		httpClient.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 			if len(via) >= 10 {
 				return errors.New("stopped after 10 redirects")
@@ -274,4 +274,14 @@ func HttpClient() *http.Client {
 		}
 	})
 	return httpClient
+}
+
+func NewHttpClient() *http.Client {
+	return &http.Client{
+		Timeout: time.Hour * 48,
+		Transport: &http.Transport{
+			Proxy:           http.ProxyFromEnvironment,
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: conf.Conf.TlsInsecureSkipVerify},
+		},
+	}
 }

@@ -3,7 +3,6 @@ package thunder
 import (
 	"context"
 	"fmt"
-	"github.com/alist-org/alist/v3/internal/stream"
 	"net/http"
 	"strconv"
 	"strings"
@@ -383,10 +382,10 @@ func (xc *XunLeiCommon) Put(ctx context.Context, dstDir model.Obj, file model.Fi
 			Bucket:  aws.String(param.Bucket),
 			Key:     aws.String(param.Key),
 			Expires: aws.Time(param.Expiration),
-			Body: &stream.ReaderUpdatingProgress{
+			Body: driver.NewLimitedUploadStream(ctx, &driver.ReaderUpdatingProgress{
 				Reader:         file,
 				UpdateProgress: up,
-			},
+			}),
 		})
 		return err
 	}

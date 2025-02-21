@@ -155,7 +155,7 @@ func (d *Wopan) Put(ctx context.Context, dstDir model.Obj, stream model.FileStre
 	_, err := d.client.Upload2C(d.getSpaceType(), wopan.Upload2CFile{
 		Name:        stream.GetName(),
 		Size:        stream.GetSize(),
-		Content:     stream,
+		Content:     driver.NewLimitedUploadStream(ctx, stream),
 		ContentType: stream.GetMimetype(),
 	}, dstDir.GetID(), d.FamilyID, wopan.Upload2COption{
 		OnProgress: func(current, total int64) {

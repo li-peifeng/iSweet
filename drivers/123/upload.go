@@ -81,6 +81,7 @@ func (d *Pan123) newUpload(ctx context.Context, upReq *UploadResp, file model.Fi
 		batchSize = 10
 		getS3UploadUrl = d.getS3PreSignedUrls
 	}
+	limited := driver.NewLimitedUploadStream(ctx, file)
 	for i := 1; i <= chunkCount; i += batchSize {
 		if utils.IsCanceled(ctx) {
 			return ctx.Err()
@@ -103,7 +104,7 @@ func (d *Pan123) newUpload(ctx context.Context, upReq *UploadResp, file model.Fi
 			if j == chunkCount {
 				curSize = file.GetSize() - (int64(chunkCount)-1)*chunkSize
 			}
-			err = d.uploadS3Chunk(ctx, upReq, s3PreSignedUrls, j, end, io.LimitReader(file, chunkSize), curSize, false, getS3UploadUrl)
+			err = d.uploadS3Chunk(ctx, upReq, s3PreSignedUrls, j, end, io.LimitReader(limited, chunkSize), curSize, false, getS3UploadUrl)
 			if err != nil {
 				return err
 			}

@@ -140,12 +140,8 @@ func (d *OnedriveAPP) GetFile(path string) (*File, error) {
 
 func (d *OnedriveAPP) upSmall(ctx context.Context, dstDir model.Obj, stream model.FileStreamer) error {
 	url := d.GetMetaUrl(false, stdpath.Join(dstDir.GetPath(), stream.GetName())) + "/content"
-	data, err := io.ReadAll(stream)
-	if err != nil {
-		return err
-	}
-	_, err = d.Request(url, http.MethodPut, func(req *resty.Request) {
-		req.SetBody(data).SetContext(ctx)
+	_, err := d.Request(url, http.MethodPut, func(req *resty.Request) {
+		req.SetBody(driver.NewLimitedUploadStream(ctx, stream)).SetContext(ctx)
 	}, nil)
 	return err
 }
@@ -175,7 +171,7 @@ func (d *OnedriveAPP) upBig(ctx context.Context, dstDir model.Obj, stream model.
 		if err != nil {
 			return err
 		}
-		req, err := http.NewRequest("PUT", uploadUrl, bytes.NewBuffer(byteData))
+		req, err := http.NewRequest("PUT", uploadUrl, driver.NewLimitedUploadStream(ctx, bytes.NewBuffer(byteData)))
 		if err != nil {
 			return err
 		}

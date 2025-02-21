@@ -1,7 +1,9 @@
 package cloudreve
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"path"
@@ -173,7 +175,7 @@ func (d *Cloudreve) Put(ctx context.Context, dstDir model.Obj, stream model.File
 			var n int
 			buf = make([]byte, chunkSize)
 			n, err = io.ReadAtLeast(stream, buf, chunkSize)
-			if err != nil && err != io.ErrUnexpectedEOF {
+			if err != nil && !errors.Is(err, io.ErrUnexpectedEOF) {
 				if err == io.EOF {
 					return nil
 				}
@@ -186,7 +188,7 @@ func (d *Cloudreve) Put(ctx context.Context, dstDir model.Obj, stream model.File
 			err = d.request(http.MethodPost, "/file/upload/"+u.SessionID+"/"+strconv.Itoa(chunk), func(req *resty.Request) {
 				req.SetHeader("Content-Type", "application/octet-stream")
 				req.SetHeader("Content-Length", strconv.Itoa(n))
-				req.SetBody(buf)
+				req.SetBody(driver.NewLimitedUploadStream(ctx, bytes.NewReader(buf)))
 			}, nil)
 			if err != nil {
 				break

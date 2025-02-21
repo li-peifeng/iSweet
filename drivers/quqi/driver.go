@@ -12,7 +12,6 @@ import (
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/internal/model"
-	istream "github.com/alist-org/alist/v3/internal/stream"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/alist-org/alist/v3/pkg/utils/random"
 	"github.com/aws/aws-sdk-go/aws"
@@ -387,8 +386,8 @@ func (d *Quqi) Put(ctx context.Context, dstDir model.Obj, stream model.FileStrea
 	}
 	uploader := s3manager.NewUploader(s)
 	buf := make([]byte, 1024*1024*2)
-	fup := &istream.ReaderUpdatingProgress{
-		Reader: &istream.SimpleReaderWithSize{
+	fup := &driver.ReaderUpdatingProgress{
+		Reader: &driver.SimpleReaderWithSize{
 			Reader: f,
 			Size:   int64(len(buf)),
 		},
@@ -402,12 +401,19 @@ func (d *Quqi) Put(ctx context.Context, dstDir model.Obj, stream model.FileStrea
 			}
 			return nil, err
 		}
+		reader := bytes.NewReader(buf[:n])
 		_, err = uploader.S3.UploadPartWithContext(ctx, &s3.UploadPartInput{
 			UploadId:   &uploadInitResp.Data.UploadID,
 			Key:        &uploadInitResp.Data.Key,
 			Bucket:     &uploadInitResp.Data.Bucket,
 			PartNumber: aws.Int64(partNumber),
-			Body:       bytes.NewReader(buf[:n]),
+			Body: struct {
+				*driver.RateLimitReader
+				io.Seeker
+			}{
+				RateLimitReader: driver.NewLimitedUploadStream(ctx, reader),
+				Seeker:          reader,
+			},
 		})
 		if err != nil {
 			return nil, err

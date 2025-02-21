@@ -2,7 +2,6 @@ package yandex_disk
 
 import (
 	"context"
-	"github.com/alist-org/alist/v3/internal/stream"
 	"net/http"
 	"path"
 	"strconv"
@@ -118,10 +117,11 @@ func (d *YandexDisk) Put(ctx context.Context, dstDir model.Obj, s model.FileStre
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequestWithContext(ctx, resp.Method, resp.Href, &stream.ReaderUpdatingProgress{
+	reader := driver.NewLimitedUploadStream(ctx, &driver.ReaderUpdatingProgress{
 		Reader:         s,
 		UpdateProgress: up,
 	})
+	req, err := http.NewRequestWithContext(ctx, resp.Method, resp.Href, reader)
 	if err != nil {
 		return err
 	}

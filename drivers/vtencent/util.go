@@ -278,7 +278,8 @@ func (d *Vtencent) FileUpload(ctx context.Context, dstDir model.Obj, stream mode
 	input := &s3manager.UploadInput{
 		Bucket: aws.String(fmt.Sprintf("%s-%d", params.StorageBucket, params.StorageAppID)),
 		Key:    &params.Video.StoragePath,
-		Body:   io.TeeReader(stream, io.MultiWriter(hash, driver.NewProgress(stream.GetSize(), up))),
+		Body: driver.NewLimitedUploadStream(ctx,
+			io.TeeReader(stream, io.MultiWriter(hash, driver.NewProgress(stream.GetSize(), up)))),
 	}
 	_, err = uploader.UploadWithContext(ctx, input)
 	if err != nil {
