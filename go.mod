@@ -7,6 +7,7 @@ toolchain go1.23.1
 require (
 	github.com/KirCute/ftpserverlib-pasvportmap v1.25.0
 	github.com/KirCute/sftpd-alist v0.0.12
+	github.com/ProtonMail/go-crypto v1.0.0
 	github.com/SheltonZhu/115driver v1.0.34
 	github.com/Xhofe/go-cache v0.0.0-20240804043513-b1a71927bc21
 	github.com/Xhofe/rateg v0.0.0-20230728072201-251a4e1adad4
@@ -90,6 +91,7 @@ require (
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/charmbracelet/x/ansi v0.2.3 // indirect
 	github.com/charmbracelet/x/term v0.2.0 // indirect
+	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
 	github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707 // indirect
