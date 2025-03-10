@@ -108,6 +108,7 @@ func (d *Dropbox) getFiles(ctx context.Context, path string) ([]File, error) {
 	res := make([]File, 0)
 
 	data := base.Json{
+    	"include_media_info":                  true, // 添加此行
 		"include_deleted":                     false,
 		"include_has_explicit_shared_members": false,
 		"include_mounted_folders":             false,

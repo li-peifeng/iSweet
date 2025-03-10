@@ -42,6 +42,7 @@ type File struct {
 	Size           int       `json:"size"`
 	IsDownloadable bool      `json:"is_downloadable"`
 	ContentHash    string    `json:"content_hash"`
+    ThumbnailLink  string    `json:"thumbnail_link"` // 假设API返回缩略图URL
 }
 
 type ListResp struct {
@@ -81,6 +82,8 @@ func fileToObj(f File) *model.ObjThumb {
 			Modified: f.ServerModified,
 			IsFolder: f.Tag == "folder",
 		},
-		Thumbnail: model.Thumbnail{},
+		Thumbnail: model.Thumbnail{
+            Thumbnail: f.ThumbnailLink, // 填充缩略图URL或数据
+        },
 	}
 }
