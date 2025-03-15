@@ -149,7 +149,7 @@ func (d *Cloudreve) Put(ctx context.Context, dstDir model.Obj, stream model.File
 		"size":          stream.GetSize(),
 		"name":          stream.GetName(),
 		"policy_id":     r.Policy.Id,
-		"last_modified": stream.ModTime().Unix(),
+		"last_modified": stream.ModTime().UnixMilli(),
 	}
 
 	// 获取上传会话信息

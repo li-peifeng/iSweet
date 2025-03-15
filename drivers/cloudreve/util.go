@@ -208,7 +208,8 @@ func (d *Cloudreve) upRemote(ctx context.Context, stream model.FileStreamer, u U
 			return err
 		}
 		req = req.WithContext(ctx)
-		req.Header.Set("Content-Length", strconv.Itoa(int(byteSize)))
+		req.ContentLength = byteSize
+		// req.Header.Set("Content-Length", strconv.Itoa(int(byteSize)))
 		req.Header.Set("Authorization", fmt.Sprint(credential))
 		finish += byteSize
 		res, err := base.HttpClient.Do(req)
@@ -247,7 +248,8 @@ func (d *Cloudreve) upOneDrive(ctx context.Context, stream model.FileStreamer, u
 			return err
 		}
 		req = req.WithContext(ctx)
-		req.Header.Set("Content-Length", strconv.Itoa(int(byteSize)))
+		req.ContentLength = byteSize
+		// req.Header.Set("Content-Length", strconv.Itoa(int(byteSize)))
 		req.Header.Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", finish, finish+byteSize-1, stream.GetSize()))
 		finish += byteSize
 		res, err := base.HttpClient.Do(req)

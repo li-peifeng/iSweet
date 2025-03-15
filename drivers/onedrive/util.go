@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	stdpath "path"
-	"strconv"
 
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/driver"
@@ -226,7 +225,8 @@ func (d *Onedrive) upBig(ctx context.Context, dstDir model.Obj, stream model.Fil
 			return err
 		}
 		req = req.WithContext(ctx)
-		req.Header.Set("Content-Length", strconv.Itoa(int(byteSize)))
+		req.ContentLength = byteSize
+		// req.Header.Set("Content-Length", strconv.Itoa(int(byteSize)))
 		req.Header.Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", finish, finish+byteSize-1, stream.GetSize()))
 		finish += byteSize
 		res, err := base.HttpClient.Do(req)

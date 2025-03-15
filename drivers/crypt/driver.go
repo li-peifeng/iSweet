@@ -282,8 +282,9 @@ func (d *Crypt) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (
 			if err != nil {
 				return nil, err
 			}
-			// 可以直接返回，读取完也不会调用Close，直到连接断开Close
-			return remoteLink.MFile, nil
+			//keep reuse same MFile and close at last.
+			remoteClosers.Add(remoteLink.MFile)
+			return io.NopCloser(remoteLink.MFile), nil
 		}
 
 		return nil, errs.NotSupport
