@@ -2,15 +2,21 @@ package _115_open
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
+	"io"
 	"net/http"
+	"strconv"
+	"strings"
+	"time"
 
+	"github.com/alist-org/alist/v3/cmd/flags"
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/driver"
-	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/pkg/utils"
+	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	sdk "github.com/xhofe/115-sdk-go"
 )
 
@@ -29,11 +35,16 @@ func (d *Open115) GetAddition() driver.Additional {
 }
 
 func (d *Open115) Init(ctx context.Context) error {
-	d.client = sdk.New(sdk.WithRefreshToken(d.Addition.RefreshToken)).SetOnRefreshToken(func(s1, s2 string) {
-		d.Addition.AccessToken = s1
-		d.Addition.RefreshToken = s2
-		op.MustSaveDriverStorage(d)
-	})
+	d.client = sdk.New(sdk.WithRefreshToken(d.Addition.RefreshToken),
+		sdk.WithAccessToken(d.Addition.AccessToken),
+		sdk.WithOnRefreshToken(func(s1, s2 string) {
+			d.Addition.AccessToken = s1
+			d.Addition.RefreshToken = s2
+			op.MustSaveDriverStorage(d)
+		}))
+	if flags.Debug || flags.Dev {
+		d.client.SetDebug(true)
+	}
 	_, err := d.client.UserInfo(ctx)
 	if err != nil {
 		return err
@@ -104,56 +115,191 @@ func (d *Open115) Link(ctx context.Context, file model.Obj, args model.LinkArgs)
 }
 
 func (d *Open115) MakeDir(ctx context.Context, parentDir model.Obj, dirName string) (model.Obj, error) {
-	// TODO create folder, optional
-	return nil, errs.NotImplement
+	resp, err := d.client.Mkdir(ctx, parentDir.GetID(), dirName)
+	if err != nil {
+		return nil, err
+	}
+	return &Obj{
+		Fid:  resp.FileID,
+		Pid:  parentDir.GetID(),
+		Fn:   dirName,
+		Fc:   "0",
+		Upt:  time.Now().Unix(),
+		Uet:  time.Now().Unix(),
+		UpPt: time.Now().Unix(),
+	}, nil
 }
 
 func (d *Open115) Move(ctx context.Context, srcObj, dstDir model.Obj) (model.Obj, error) {
-	// TODO move obj, optional
-	return nil, errs.NotImplement
+	_, err := d.client.Move(ctx, &sdk.MoveReq{
+		FileIDs: srcObj.GetID(),
+		ToCid:   dstDir.GetID(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return srcObj, nil
 }
 
 func (d *Open115) Rename(ctx context.Context, srcObj model.Obj, newName string) (model.Obj, error) {
-	// TODO rename obj, optional
-	return nil, errs.NotImplement
+	_, err := d.client.UpdateFile(ctx, &sdk.UpdateFileReq{
+		FileID:  srcObj.GetID(),
+		FileNma: newName,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return srcObj, nil
 }
 
 func (d *Open115) Copy(ctx context.Context, srcObj, dstDir model.Obj) (model.Obj, error) {
-	// TODO copy obj, optional
-	return nil, errs.NotImplement
+	_, err := d.client.Copy(ctx, &sdk.CopyReq{
+		PID:     dstDir.GetID(),
+		FileID:  srcObj.GetID(),
+		NoDupli: "1",
+	})
+	if err != nil {
+		return nil, err
+	}
+	return srcObj, nil
 }
 
 func (d *Open115) Remove(ctx context.Context, obj model.Obj) error {
-	// TODO remove obj, optional
-	return errs.NotImplement
+	_obj, ok := obj.(*Obj)
+	if !ok {
+		return fmt.Errorf("can't convert obj")
+	}
+	_, err := d.client.DelFile(ctx, &sdk.DelFileReq{
+		FileIDs:  _obj.GetID(),
+		ParentID: _obj.Pid,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func (d *Open115) Put(ctx context.Context, dstDir model.Obj, file model.FileStreamer, up driver.UpdateProgress) (model.Obj, error) {
-	// TODO upload file, optional
-	return nil, errs.NotImplement
+func (d *Open115) Put(ctx context.Context, dstDir model.Obj, file model.FileStreamer, up driver.UpdateProgress) error {
+	tempF, err := file.CacheFullInTempFile()
+	if err != nil {
+		return err
+	}
+	// cal full sha1
+	sha1, err := utils.HashReader(utils.SHA1, tempF)
+	if err != nil {
+		return err
+	}
+	_, err = tempF.Seek(0, io.SeekStart)
+	if err != nil {
+		return err
+	}
+	// pre 128k sha1
+	sha1128k, err := utils.HashReader(utils.SHA1, io.LimitReader(tempF, 128*1024))
+	if err != nil {
+		return err
+	}
+	_, err = tempF.Seek(0, io.SeekStart)
+	if err != nil {
+		return err
+	}
+	// 1. Init
+	resp, err := d.client.UploadInit(ctx, &sdk.UploadInitReq{
+		FileName: file.GetName(),
+		FileSize: file.GetSize(),
+		Target:   dstDir.GetID(),
+		FileID:   strings.ToUpper(sha1),
+		PreID:    strings.ToUpper(sha1128k),
+	})
+	if err != nil {
+		return err
+	}
+	if resp.Status == 2 {
+		return nil
+	}
+	// 2. two way verify
+	if utils.SliceContains([]int{6, 7, 8}, resp.Status) {
+		signCheck := strings.Split(resp.SignCheck, "-") //"sign_check": "2392148-2392298" 取2392148-2392298之间的内容(包含2392148、2392298)的sha1
+		start, err := strconv.ParseInt(signCheck[0], 10, 64)
+		if err != nil {
+			return err
+		}
+		end, err := strconv.ParseInt(signCheck[1], 10, 64)
+		if err != nil {
+			return err
+		}
+		_, err = tempF.Seek(start, io.SeekStart)
+		if err != nil {
+			return err
+		}
+		signVal, err := utils.HashReader(utils.SHA1, io.LimitReader(tempF, end-start+1))
+		if err != nil {
+			return err
+		}
+		_, err = tempF.Seek(0, io.SeekStart)
+		if err != nil {
+			return err
+		}
+		resp, err = d.client.UploadInit(ctx, &sdk.UploadInitReq{
+			FileName: file.GetName(),
+			FileSize: file.GetSize(),
+			Target:   dstDir.GetID(),
+			FileID:   strings.ToUpper(sha1),
+			PreID:    strings.ToUpper(sha1128k),
+			SignKey:  resp.SignKey,
+			SignVal:  strings.ToUpper(signVal),
+		})
+		if err != nil {
+			return err
+		}
+		if resp.Status == 2 {
+			return nil
+		}
+	}
+	// 3. get upload token
+	tokenResp, err := d.client.UploadGetToken(ctx)
+	if err != nil {
+		return err
+	}
+	// 4. upload
+	ossClient, err := oss.New(tokenResp.Endpoint, tokenResp.AccessKeyId, tokenResp.AccessKeySecret, oss.SecurityToken(tokenResp.SecurityToken))
+	if err != nil {
+		return err
+	}
+	bucket, err := ossClient.Bucket(resp.Bucket)
+	if err != nil {
+		return err
+	}
+	err = bucket.PutObject(resp.Object, tempF,
+		oss.Callback(base64.StdEncoding.EncodeToString([]byte(resp.Callback.Value.Callback))),
+		oss.CallbackVar(base64.StdEncoding.EncodeToString([]byte(resp.Callback.Value.CallbackVar))),
+	)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func (d *Open115) GetArchiveMeta(ctx context.Context, obj model.Obj, args model.ArchiveArgs) (model.ArchiveMeta, error) {
-	// TODO get archive file meta-info, return errs.NotImplement to use an internal archive tool, optional
-	return nil, errs.NotImplement
-}
+// func (d *Open115) GetArchiveMeta(ctx context.Context, obj model.Obj, args model.ArchiveArgs) (model.ArchiveMeta, error) {
+// 	// TODO get archive file meta-info, return errs.NotImplement to use an internal archive tool, optional
+// 	return nil, errs.NotImplement
+// }
 
-func (d *Open115) ListArchive(ctx context.Context, obj model.Obj, args model.ArchiveInnerArgs) ([]model.Obj, error) {
-	// TODO list args.InnerPath in the archive obj, return errs.NotImplement to use an internal archive tool, optional
-	return nil, errs.NotImplement
-}
+// func (d *Open115) ListArchive(ctx context.Context, obj model.Obj, args model.ArchiveInnerArgs) ([]model.Obj, error) {
+// 	// TODO list args.InnerPath in the archive obj, return errs.NotImplement to use an internal archive tool, optional
+// 	return nil, errs.NotImplement
+// }
 
-func (d *Open115) Extract(ctx context.Context, obj model.Obj, args model.ArchiveInnerArgs) (*model.Link, error) {
-	// TODO return link of file args.InnerPath in the archive obj, return errs.NotImplement to use an internal archive tool, optional
-	return nil, errs.NotImplement
-}
+// func (d *Open115) Extract(ctx context.Context, obj model.Obj, args model.ArchiveInnerArgs) (*model.Link, error) {
+// 	// TODO return link of file args.InnerPath in the archive obj, return errs.NotImplement to use an internal archive tool, optional
+// 	return nil, errs.NotImplement
+// }
 
-func (d *Open115) ArchiveDecompress(ctx context.Context, srcObj, dstDir model.Obj, args model.ArchiveDecompressArgs) ([]model.Obj, error) {
-	// TODO extract args.InnerPath path in the archive srcObj to the dstDir location, optional
-	// a folder with the same name as the archive file needs to be created to store the extracted results if args.PutIntoNewDir
-	// return errs.NotImplement to use an internal archive tool
-	return nil, errs.NotImplement
-}
+// func (d *Open115) ArchiveDecompress(ctx context.Context, srcObj, dstDir model.Obj, args model.ArchiveDecompressArgs) ([]model.Obj, error) {
+// 	// TODO extract args.InnerPath path in the archive srcObj to the dstDir location, optional
+// 	// a folder with the same name as the archive file needs to be created to store the extracted results if args.PutIntoNewDir
+// 	// return errs.NotImplement to use an internal archive tool
+// 	return nil, errs.NotImplement
+// }
 
 //func (d *Template) Other(ctx context.Context, args model.OtherArgs) (interface{}, error) {
 //	return nil, errs.NotSupport

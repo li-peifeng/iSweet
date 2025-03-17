@@ -45,7 +45,17 @@ func Proxy(w http.ResponseWriter, r *http.Request, link *model.Link, file model.
 			if err != nil {
 				return fmt.Errorf("failed to read markdown content: %w", err)
 			}
-
+		} else if link.RangeReadCloser != nil {
+			attachHeader(w, file)
+			rrc, err := link.RangeReadCloser.RangeRead(r.Context(), http_range.Range{Start: 0, Length: -1})
+			if err != nil {
+				return err
+			}
+			defer rrc.Close()
+			markdownContent, err = io.ReadAll(rrc)
+			if err != nil {
+				return fmt.Errorf("failed to read markdown content: %w", err)
+			}
 		} else {
 			header := net.ProcessHeader(r.Header, link.Header)
 			res, err := net.RequestHttp(r.Context(), r.Method, header, link.URL)
