@@ -16,7 +16,7 @@ type Addition struct {
 }
 
 var config = driver.Config{
-	Name:              "115Open",
+	Name:              "115 Open",
 	LocalSort:         false,
 	OnlyLocal:         false,
 	OnlyProxy:         false,
