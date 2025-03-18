@@ -8,9 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"path"
 	"strconv"
-	"strings"
 
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/driver"
@@ -151,7 +149,7 @@ func (d *Vtencent) ApplyUploadUGC(signature string, stream model.FileStreamer) (
 	form := base.Json{
 		"signature": signature,
 		"videoName": stream.GetName(),
-		"videoType": strings.ReplaceAll(path.Ext(stream.GetName()), ".", ""),
+		"videoType": utils.Ext(stream.GetName()),
 		"videoSize": stream.GetSize(),
 	}
 	var resps RspApplyUploadUGC

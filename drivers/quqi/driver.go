@@ -316,7 +316,7 @@ func (d *Quqi) Put(ctx context.Context, dstDir model.Obj, stream model.FileStrea
 	// if the file already exists in Quqi server, there is no need to actually upload it
 	if uploadInitResp.Data.Exist {
 		// the file name returned by Quqi does not include the extension name
-		nodeName, nodeExt := uploadInitResp.Data.NodeName, rawExt(stream.GetName())
+		nodeName, nodeExt := uploadInitResp.Data.NodeName, utils.Ext(stream.GetName())
 		if nodeExt != "" {
 			nodeName = nodeName + "." + nodeExt
 		}
@@ -432,7 +432,7 @@ func (d *Quqi) Put(ctx context.Context, dstDir model.Obj, stream model.FileStrea
 		return nil, err
 	}
 	// the file name returned by Quqi does not include the extension name
-	nodeName, nodeExt := uploadFinishResp.Data.NodeName, rawExt(stream.GetName())
+	nodeName, nodeExt := uploadFinishResp.Data.NodeName, utils.Ext(stream.GetName())
 	if nodeExt != "" {
 		nodeName = nodeName + "." + nodeExt
 	}

@@ -149,6 +149,10 @@ func (d *Open115) Rename(ctx context.Context, srcObj model.Obj, newName string) 
 	if err != nil {
 		return nil, err
 	}
+	obj, ok := srcObj.(*Obj)
+	if ok {
+		obj.Fn = newName
+	}
 	return srcObj, nil
 }
 

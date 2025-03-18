@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	stdpath "path"
 	"strings"
 	"time"
 
@@ -113,16 +112,6 @@ func (d *Quqi) checkLogin() bool {
 		return false
 	}
 	return true
-}
-
-// rawExt 保留扩展名大小写
-func rawExt(name string) string {
-	ext := stdpath.Ext(name)
-	if strings.HasPrefix(ext, ".") {
-		ext = ext[1:]
-	}
-
-	return ext
 }
 
 // decryptKey 获取密码
