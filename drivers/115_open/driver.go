@@ -2,7 +2,6 @@ package _115_open
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,7 +15,6 @@ import (
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/pkg/utils"
-	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	sdk "github.com/xhofe/115-sdk-go"
 )
 
@@ -265,18 +263,7 @@ func (d *Open115) Put(ctx context.Context, dstDir model.Obj, file model.FileStre
 		return err
 	}
 	// 4. upload
-	ossClient, err := oss.New(tokenResp.Endpoint, tokenResp.AccessKeyId, tokenResp.AccessKeySecret, oss.SecurityToken(tokenResp.SecurityToken))
-	if err != nil {
-		return err
-	}
-	bucket, err := ossClient.Bucket(resp.Bucket)
-	if err != nil {
-		return err
-	}
-	err = bucket.PutObject(resp.Object, tempF,
-		oss.Callback(base64.StdEncoding.EncodeToString([]byte(resp.Callback.Value.Callback))),
-		oss.CallbackVar(base64.StdEncoding.EncodeToString([]byte(resp.Callback.Value.CallbackVar))),
-	)
+	err = d.multpartUpload(ctx, tempF, file, up, tokenResp, resp)
 	if err != nil {
 		return err
 	}

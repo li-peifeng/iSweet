@@ -321,9 +321,6 @@ func (d *BaiduPhoto) Put(ctx context.Context, dstDir model.Obj, stream model.Fil
 			if utils.IsCanceled(upCtx) {
 				break
 			}
-			if err = sem.Acquire(ctx, 1); err != nil {
-				break
-			}
 
 			i, partseq, offset, byteSize := i, partseq, int64(partseq)*DEFAULT, DEFAULT
 			if partseq+1 == count {
@@ -331,6 +328,9 @@ func (d *BaiduPhoto) Put(ctx context.Context, dstDir model.Obj, stream model.Fil
 			}
 
 			threadG.Go(func(ctx context.Context) error {
+				if err = sem.Acquire(ctx, 1); err != nil {
+					return err
+				}
 				defer sem.Release(1)
 				uploadParams := map[string]string{
 					"method":   "upload",

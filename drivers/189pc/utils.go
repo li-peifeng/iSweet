@@ -520,9 +520,6 @@ func (y *Cloud189PC) StreamUpload(ctx context.Context, dstDir model.Obj, file mo
 		if utils.IsCanceled(upCtx) {
 			break
 		}
-		if err = sem.Acquire(ctx, 1); err != nil {
-			break
-		}
 		byteData := make([]byte, sliceSize)
 		if i == count {
 			byteData = byteData[:lastPartSize]
@@ -541,6 +538,9 @@ func (y *Cloud189PC) StreamUpload(ctx context.Context, dstDir model.Obj, file mo
 		partInfo := fmt.Sprintf("%d-%s", i, base64.StdEncoding.EncodeToString(md5Bytes))
 
 		threadG.Go(func(ctx context.Context) error {
+			if err = sem.Acquire(ctx, 1); err != nil {
+				return err
+			}
 			defer sem.Release(1)
 			uploadUrls, err := y.GetMultiUploadUrls(ctx, isFamily, initMultiUpload.Data.UploadFileID, partInfo)
 			if err != nil {
