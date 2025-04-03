@@ -1,3 +1,14 @@
+<div align="center">
+  <a href="https://peifeng.li"><img width="100px" alt="logo" src="https://is.peifeng.li/logo.png"/></a>
+<div>
+  <a href="https://github.com/li-peifeng/isweet/actions?query=workflow%3ABuild">
+    <img src="https://img.shields.io/github/actions/workflow/status/li-peifeng/isweet/build.yml?branch=main" alt="Build status" />
+  </a>
+  <a href="https://github.com/li-peifeng/isweet/releases">
+    <img src="https://img.shields.io/github/release/li-peifeng/isweet" alt="latest version" />
+  </a>
+</div>
+
 # iSweet 基于 alist 修改定制版
 
 ## Docker 镜像拉取
