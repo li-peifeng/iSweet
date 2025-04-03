@@ -78,6 +78,8 @@ func (d *BaiduNetdisk) List(ctx context.Context, dir model.Obj, args model.ListA
 func (d *BaiduNetdisk) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
 	if d.DownloadAPI == "crack" {
 		return d.linkCrack(file, args)
+	} else if d.DownloadAPI == "crack_video" {
+		return d.linkCrackVideo(file, args)
 	}
 	return d.linkOfficial(file, args)
 }

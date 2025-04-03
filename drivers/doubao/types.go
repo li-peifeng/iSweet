@@ -22,15 +22,15 @@ type NodeInfo struct {
 	Name                string `json:"name"`
 	Key                 string `json:"key"`
 	NodeType            int    `json:"node_type"` // 0: 文件, 1: 文件夹
-	Size                int    `json:"size"`
+	Size                int64  `json:"size"`
 	Source              int    `json:"source"`
 	NameReviewStatus    int    `json:"name_review_status"`
 	ContentReviewStatus int    `json:"content_review_status"`
 	RiskReviewStatus    int    `json:"risk_review_status"`
 	ConversationID      string `json:"conversation_id"`
 	ParentID            string `json:"parent_id"`
-	CreateTime          int    `json:"create_time"`
-	UpdateTime          int    `json:"update_time"`
+	CreateTime          int64  `json:"create_time"`
+	UpdateTime          int64  `json:"update_time"`
 }
 
 type GetFileUrlResp struct {

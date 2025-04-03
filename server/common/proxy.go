@@ -50,9 +50,9 @@ func Proxy(w http.ResponseWriter, r *http.Request, link *model.Link, file model.
 		rangeReader := func(ctx context.Context, httpRange http_range.Range) (io.ReadCloser, error) {
 			requestHeader := ctx.Value("request_header")
 			if requestHeader == nil {
-				requestHeader = &http.Header{}
+				requestHeader = http.Header{}
 			}
-			header := net.ProcessHeader(*(requestHeader.(*http.Header)), link.Header)
+			header := net.ProcessHeader(requestHeader.(http.Header), link.Header)
 			down := net.NewDownloader(func(d *net.Downloader) {
 				d.Concurrency = link.Concurrency
 				d.PartSize = link.PartSize
