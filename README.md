@@ -10,6 +10,9 @@
   <a href="https://hub.docker.com/r/leolitaly/isweet">
     <img src="https://img.shields.io/docker/pulls/leolitaly/isweet?color=%2348BB78&logo=docker&label=pulls" alt="Downloads" />
   </a>
+  <a href="https://github.com/li-peifeng/isweet/releases">
+    <img src="https://img.shields.io/github/downloads/li-peifeng/isweet/total?color=%239F7AEA&logo=github" alt="Downloads" />
+  </a>
 </div>
 
 # iSweet 基于 alist 修改定制版
