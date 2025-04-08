@@ -8,10 +8,10 @@
     <img src="https://img.shields.io/github/release/li-peifeng/isweet" alt="latest version" />
   </a>
   <a href="https://hub.docker.com/r/leolitaly/isweet">
-    <img src="https://img.shields.io/docker/pulls/leolitaly/isweet?color=%2348BB78&logo=docker&label=pulls" alt="Downloads" />
+    <img src="https://img.shields.io/docker/pulls/leolitaly/isweet?color=#48BB78&logo=docker&label=pulls" alt="Downloads" />
   </a>
   <a href="https://github.com/li-peifeng/isweet/releases">
-    <img src="https://img.shields.io/github/downloads/li-peifeng/isweet/total?color=%239F7AEA&logo=github" alt="Downloads" />
+    <img src="https://img.shields.io/github/downloads/li-peifeng/isweet/total?color=#9F7AEA&logo=github" alt="Downloads" />
   </a>
 </div>
 
