@@ -52,19 +52,19 @@ import (
 //
 // If the caller has set w's ETag header formatted per RFC 7232, section 2.3,
 // ServeHTTP uses it to handle requests using If-Match, If-None-Match, or If-Range.
-func ServeHTTP(w http.ResponseWriter, r *http.Request, name string, modTime time.Time, size int64, RangeReadCloser model.RangeReadCloserIF) {
+func ServeHTTP(w http.ResponseWriter, r *http.Request, name string, modTime time.Time, size int64, RangeReadCloser model.RangeReadCloserIF) error {
 	defer RangeReadCloser.Close()
 	setLastModified(w, modTime)
 	done, rangeReq := checkPreconditions(w, r, modTime)
 	if done {
-		return
+		return nil
 	}
 
 	if size < 0 {
 		// since too many functions need file size to work,
 		// will not implement the support of unknown file size here
 		http.Error(w, "negative content size not supported", http.StatusInternalServerError)
-		return
+		return nil
 	}
 
 	code := http.StatusOK
@@ -103,7 +103,7 @@ func ServeHTTP(w http.ResponseWriter, r *http.Request, name string, modTime time
 		fallthrough
 	default:
 		http.Error(w, err.Error(), http.StatusRequestedRangeNotSatisfiable)
-		return
+		return nil
 	}
 
 	if sumRangesSize(ranges) > size {
@@ -124,7 +124,7 @@ func ServeHTTP(w http.ResponseWriter, r *http.Request, name string, modTime time
 				code = http.StatusTooManyRequests
 			}
 			http.Error(w, err.Error(), code)
-			return
+			return nil
 		}
 		sendContent = reader
 	case len(ranges) == 1:
@@ -147,7 +147,7 @@ func ServeHTTP(w http.ResponseWriter, r *http.Request, name string, modTime time
 				code = http.StatusTooManyRequests
 			}
 			http.Error(w, err.Error(), code)
-			return
+			return nil
 		}
 		sendSize = ra.Length
 		code = http.StatusPartialContent
@@ -205,9 +205,11 @@ func ServeHTTP(w http.ResponseWriter, r *http.Request, name string, modTime time
 			if err == ErrExceedMaxConcurrency {
 				code = http.StatusTooManyRequests
 			}
-			http.Error(w, err.Error(), code)
+			w.WriteHeader(code)
+			return err
 		}
 	}
+	return nil
 }
 func ProcessHeader(origin, override http.Header) http.Header {
 	result := http.Header{}

@@ -67,7 +67,7 @@ const (
 	WebClientID          = "YUMx5nI8ZU8Ap8pm"
 	WebClientSecret      = "dbw2OtmVEeuUvIptb1Coyg"
 	WebClientVersion     = "2.0.0"
-	WebPackageName       = "drive.mypikpak.com"
+	WebPackageName       = "mypikpak.com"
 	WebSdkVersion        = "8.0.3"
 	PCClientID           = "YvtoWO6GNHiuCl7x"
 	PCClientSecret       = "1NIH5R1IEe2pAxZE3hv3uA"
