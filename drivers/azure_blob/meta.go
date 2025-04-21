@@ -12,6 +12,11 @@ type Addition struct {
 	SignURLExpire int    `json:"sign_url_expire" type:"number" default:"4" help:"The expiration time for SAS URLs, in hours."`
 }
 
+// implement GetRootId interface
+func (r Addition) GetRootId() string {
+	return r.ContainerName
+}
+
 var config = driver.Config{
 	Name:        "Azure Blob Storage",
 	LocalSort:   true,
