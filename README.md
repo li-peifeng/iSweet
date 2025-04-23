@@ -1,6 +1,8 @@
-<div align="center">
-  <a href="https://peifeng.li"><img width="184px" alt="logo" src="https://is.peifeng.li/logo.png"/></a>
-<div>
+<p align="center">
+  <a href="https://peifeng.li"><img width="184px" alt="logo" src="https://is.peifeng.li/logo.png" />
+  </a>
+</p>
+<p align="center">
   <a href="https://github.com/li-peifeng/isweet/actions?query=workflow:Build">
     <img src="https://img.shields.io/github/actions/workflow/status/li-peifeng/isweet/build.yml?branch=main" alt="Build status" />
   </a>
@@ -13,7 +15,7 @@
   <a href="https://github.com/li-peifeng/isweet/releases">
     <img src="https://img.shields.io/github/downloads/li-peifeng/isweet/total?color=#9F7AEA&logo=github" alt="Downloads" />
   </a>
-</div>
+</p>
 
 # iSweet 基于 alist 修改定制版
 
