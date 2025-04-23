@@ -1,5 +1,5 @@
 <div align="center">
-  <a href="https://peifeng.li"><img width="256px" alt="logo" src="https://is.peifeng.li/logo.png"/></a>
+  <a href="https://peifeng.li"><img width="184px" alt="logo" src="https://is.peifeng.li/logo.png"/></a>
 <div>
   <a href="https://github.com/li-peifeng/isweet/actions?query=workflow:Build">
     <img src="https://img.shields.io/github/actions/workflow/status/li-peifeng/isweet/build.yml?branch=main" alt="Build status" />
