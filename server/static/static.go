@@ -65,7 +65,7 @@ func UpdateIndex() {
 	mainColor := setting.GetStr(conf.MainColor)
 	conf.ManageHtml = conf.RawIndexHtml
 	replaceMap1 := map[string]string{
-		"https://is.peifeng.li/isweet/favicon.ico": favicon,
+		"https://li-peifeng.github.io/isweet/favicon.ico": favicon,
 		"Loading...":            title,
 		"main_color: undefined": fmt.Sprintf("main_color: '%s'", mainColor),
 	}
