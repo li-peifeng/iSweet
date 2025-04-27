@@ -3,8 +3,9 @@ package doubao
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/alist-org/alist/v3/internal/model"
 	"time"
+
+	"github.com/alist-org/alist/v3/internal/model"
 )
 
 type BaseResp struct {
@@ -36,6 +37,17 @@ type File struct {
 	ParentID            string `json:"parent_id"`
 	CreateTime          int64  `json:"create_time"`
 	UpdateTime          int64  `json:"update_time"`
+}
+
+type GetDownloadInfoResp struct {
+	BaseResp
+	Data struct {
+		DownloadInfos []struct {
+			NodeID    string `json:"node_id"`
+			MainURL   string `json:"main_url"`
+			BackupURL string `json:"backup_url"`
+		} `json:"download_infos"`
+	} `json:"data"`
 }
 
 type GetFileUrlResp struct {

@@ -556,7 +556,15 @@ func (d *Yun139) personalGetFiles(fileId string) ([]model.Obj, error) {
 			} else {
 				var Thumbnails = item.Thumbnails
 				var ThumbnailUrl string
-				if len(Thumbnails) > 0 {
+				if d.UseLargeThumbnail {
+					for _, thumb := range Thumbnails {
+						if strings.Contains(thumb.Style, "Large") {
+							ThumbnailUrl = thumb.Url
+							break
+						}
+					}
+				}
+				if ThumbnailUrl == "" && len(Thumbnails) > 0 {
 					ThumbnailUrl = Thumbnails[len(Thumbnails)-1].Url
 				}
 				f = &model.ObjThumb{

@@ -12,6 +12,7 @@ type Addition struct {
 	// define other
 	Cookie       string `json:"cookie" type:"text"`
 	UploadThread string `json:"upload_thread" default:"3"`
+	DownloadApi  string `json:"download_api" type:"select" options:"get_file_url,get_download_info" default:"get_file_url"`
 }
 
 var config = driver.Config{

@@ -3,6 +3,11 @@ package doubao
 import (
 	"context"
 	"errors"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/errs"
@@ -10,10 +15,6 @@ import (
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/go-resty/resty/v2"
 	"github.com/google/uuid"
-	"net/http"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type Doubao struct {
@@ -97,33 +98,50 @@ func (d *Doubao) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 	var downloadUrl string
 
 	if u, ok := file.(*Object); ok {
-		switch u.NodeType {
-		case VideoType, AudioType:
-			var r GetVideoFileUrlResp
-			_, err := d.request("/samantha/media/get_play_info", http.MethodPost, func(req *resty.Request) {
+		switch d.DownloadApi {
+		case "get_download_info":
+			var r GetDownloadInfoResp
+			_, err := d.request("/samantha/aispace/get_download_info", http.MethodPost, func(req *resty.Request) {
 				req.SetBody(base.Json{
-					"key":     u.Key,
-					"node_id": file.GetID(),
+					"requests": []base.Json{{"node_id": file.GetID()}},
 				})
 			}, &r)
 			if err != nil {
 				return nil, err
 			}
 
-			downloadUrl = r.Data.OriginalMediaInfo.MainURL
+			downloadUrl = r.Data.DownloadInfos[0].MainURL
+		case "get_file_url":
+			switch u.NodeType {
+			case VideoType, AudioType:
+				var r GetVideoFileUrlResp
+				_, err := d.request("/samantha/media/get_play_info", http.MethodPost, func(req *resty.Request) {
+					req.SetBody(base.Json{
+						"key":     u.Key,
+						"node_id": file.GetID(),
+					})
+				}, &r)
+				if err != nil {
+					return nil, err
+				}
+
+				downloadUrl = r.Data.OriginalMediaInfo.MainURL
+			default:
+				var r GetFileUrlResp
+				_, err := d.request("/alice/message/get_file_url", http.MethodPost, func(req *resty.Request) {
+					req.SetBody(base.Json{
+						"uris": []string{u.Key},
+						"type": FileNodeType[u.NodeType],
+					})
+				}, &r)
+				if err != nil {
+					return nil, err
+				}
+
+				downloadUrl = r.Data.FileUrls[0].MainURL
+			}
 		default:
-			var r GetFileUrlResp
-			_, err := d.request("/alice/message/get_file_url", http.MethodPost, func(req *resty.Request) {
-				req.SetBody(base.Json{
-					"uris": []string{u.Key},
-					"type": FileNodeType[u.NodeType],
-				})
-			}, &r)
-			if err != nil {
-				return nil, err
-			}
-
-			downloadUrl = r.Data.FileUrls[0].MainURL
+			return nil, errs.NotImplement
 		}
 
 		// 生成标准的Content-Disposition
