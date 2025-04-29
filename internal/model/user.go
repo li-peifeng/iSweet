@@ -177,5 +177,5 @@ func (u *User) WebAuthnCredentials() []webauthn.Credential {
 }
 
 func (u *User) WebAuthnIcon() string {
-	return "https://cdn.jsdelivr.net/gh/li-peifeng/static/logo.png"
+	return "/static/logo.png"
 }
