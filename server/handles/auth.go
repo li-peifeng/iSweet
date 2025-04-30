@@ -114,7 +114,7 @@ func UpdateCurrent(c *gin.Context) {
 	}
 	user := c.MustGet("user").(*model.User)
 	if user.IsGuest() {
-		common.ErrorStrResp(c, "Guest user can not update profile", 403)
+		common.ErrorStrResp(c, "访客用户无法更新个人资料", 403)
 		return
 	}
 	user.Username = req.Username
