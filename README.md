@@ -1,7 +1,8 @@
 <p align="center">
-  <a href="https://peifeng.li"><img width="184px" alt="logo" src="https://cdn.jsdelivr.net/gh/li-peifeng/static/logo.png" />
+  <a href="https://peifeng.li"><img width="184px" alt="logo" src="https://raw.githubusercontent.com/li-peifeng/li-peifeng.github.io/refs/heads/main/logo.png" />
   </a>
 </p>
+
 <p align="center">
   <a href="https://github.com/li-peifeng/isweet/actions?query=workflow:Build">
     <img src="https://img.shields.io/github/actions/workflow/status/li-peifeng/isweet/build.yml?branch=main" alt="Build status" />
